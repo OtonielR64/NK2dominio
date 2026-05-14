@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(!['admin','visor'].includes(localStorage.getItem('nk2_role')))location.replace('login.html?next='+encodeURIComponent(location.href));</script>
+<script src="session-timeout.js"></script>
+<title>Informe Detallado — NK2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --ing: #1a5c2a; --ing-light: #e8f5ec;
+    --sal: #7a1a1a; --sal-light: #faeaea;
+    --bg: #f4f3f0; --card: #fff; --border: #dddbd6;
+    --text: #1a1a18; --muted: #6b6b66;
+    --amber: #854f0b; --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  .site-header { background: var(--text); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .site-header h1 { font-size: 13px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a { font-size: 12px; color: #aaa; text-decoration: none; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a:hover { color: #fff; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+  .card-header { padding: 12px 18px; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); background: #fafaf8; color: var(--muted); }
+  .card-body { padding: 18px; }
+
+  .periodo-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .ptab { padding: 8px 16px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; background: #fff; color: var(--muted); font-family: 'IBM Plex Sans', sans-serif; transition: all .15s; }
+  .ptab.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+  .periodo-panel { display: none; } .periodo-panel.active { display: block; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .field { display: flex; flex-direction: column; }
+  label { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; font-family: 'IBM Plex Mono', monospace; }
+  input, select { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; color: var(--text); font-family: 'IBM Plex Sans', sans-serif; outline: none; }
+  input:focus, select:focus { border-color: #999; }
+
+  .trimestre-btn { padding: 10px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; background: #fff; color: var(--text); font-family: 'IBM Plex Sans', sans-serif; text-align: center; transition: all .15s; }
+  .trimestre-btn:hover { border-color: var(--text); }
+  .trimestre-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn { padding: 9px 18px; font-size: 13px; font-weight: 500; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+  .btn-pdf { background: #c0392b; color: #fff; border-color: #c0392b; }
+  .btn-print { background: #2980b9; color: #fff; border-color: #2980b9; }
+
+  /* RESUMEN */
+  .resumen-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .res-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .res-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; font-family: 'IBM Plex Mono', monospace; margin-bottom: 6px; }
+  .res-val { font-size: 20px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+  .res-val.green { color: var(--ing); } .res-val.red { color: var(--sal); } .res-val.amber { color: var(--amber); }
+
+  /* TABLAS */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+  th { background: #fafaf8; padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 12px; border-bottom: 1px solid #f0ede8; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  .tr-total td { font-weight: 600; background: #fafaf8; border-top: 1px solid var(--border); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-ing { background: var(--ing-light); color: var(--ing); }
+  .badge-sal { background: var(--sal-light); color: var(--sal); }
+
+  /* BARRAS */
+  .bar-wrap { margin-bottom: 10px; }
+  .bar-lbl { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .bar-track { background: #f0ede8; border-radius: 4px; height: 10px; }
+  .bar-fill { height: 10px; border-radius: 4px; transition: width .4s; }
+  .bar-fill.ing { background: var(--ing); }
+  .bar-fill.sal { background: var(--sal); }
+
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+  .periodo-lbl { font-size: 13px; color: var(--muted); margin-bottom: 16px; font-style: italic; }
+
+  /* PRINT */
+  @media print {
+    @page { size: Letter portrait; margin: 8mm; }
+    .site-header, .informes-nav, .controls-card, .btn-row, .periodo-tabs { display: none !important; }
+    body { background: #fff; font-size: 10px; }
+    .container { padding: 0; max-width: 100%; }
+    .card { border: 1px solid #ccc; box-shadow: none; margin-bottom: 6px; page-break-inside: avoid; }
+    .card-header { padding: 5px 10px; font-size: 9px; }
+    .card-body { padding: 8px 10px; }
+    .print-title { display: block !important; margin-bottom: 8px; }
+    .resumen-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+    .res-card { padding: 8px 10px; }
+    .res-lbl { font-size: 9px; margin-bottom: 3px; }
+    .res-val { font-size: 13px; }
+    table { font-size: 10px; margin-bottom: 8px; }
+    th { padding: 5px 8px; font-size: 9px; }
+    td { padding: 5px 8px; }
+    .bar-wrap { margin-bottom: 4px; }
+    .bar-lbl { font-size: 9px; margin-bottom: 2px; }
+    .bar-track { height: 6px; }
+    .bar-fill { height: 6px; }
+    .periodo-lbl { font-size: 10px; margin-bottom: 6px; }
+  }
+  .print-title { display: none; text-align: center; margin-bottom: 20px; }
+  .print-title h2 { font-size: 16px; font-weight: 600; }
+  .print-title p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  @media (max-width: 600px) { .grid-2, .grid-4 { grid-template-columns: 1fr 1fr; } .resumen-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <h1>Informe Detallado · NK2</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <a href="index.html" id="lnk-volver">← Volver a Formularios</a>
+    <button onclick="cerrarSesion()" style="background:#4a4a4a;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;">🔒 Salir</button>
+  </div>
+</div>
+
+<style>
+.informes-nav{background:#fff;border-bottom:1px solid #dddbd6;padding:0 16px;display:flex;gap:0;overflow-x:auto}
+.informes-nav a{padding:10px 14px;font-size:12px;font-weight:500;color:#6b6b66;text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap;font-family:'IBM Plex Sans',sans-serif;transition:color .15s}
+.informes-nav a:hover{color:#1a1a18}
+.informes-nav a.active{color:#1a5c2a;border-bottom-color:#1a5c2a;font-weight:600}
+</style>
+<nav class="informes-nav">
+  <a href="informe.html" class="active">📊 Informe Detallado</a>
+  <a href="morosos.html">⚠ Mora</a>
+  <a href="informe_mensual.html">📄 Informe General</a>
+  <a href="reporte_filtro.html">📋 Reporte por Fechas</a>
+</nav>
+
+<div class="container">
+
+  <!-- CONTROLES -->
+  <div class="card controls-card">
+    <div class="card-header">Seleccionar período</div>
+    <div class="card-body">
+
+      <div class="periodo-tabs">
+        <button class="ptab active" onclick="switchPeriodo('actual')">Trimestre actual</button>
+        <button class="ptab" onclick="switchPeriodo('manual')">Elegir trimestre</button>
+        <button class="ptab" onclick="switchPeriodo('rango')">Rango de fechas</button>
+        <button class="ptab" onclick="switchPeriodo('anual')">Año completo</button>
+      </div>
+
+      <!-- Trimestre actual -->
+      <div class="periodo-panel active" id="panel-actual">
+        <p style="font-size:13px;color:var(--muted)" id="lbl-actual"></p>
+      </div>
+
+      <!-- Elegir trimestre -->
+      <div class="periodo-panel" id="panel-manual">
+        <div class="grid-2" style="max-width:400px">
+          <div class="field">
+            <label>Año</label>
+            <select id="sel-anio">
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Trimestre</label>
+            <select id="sel-trimestre">
+              <option value="1">T1 — Ene, Feb, Mar</option>
+              <option value="2">T2 — Abr, May, Jun</option>
+              <option value="3">T3 — Jul, Ago, Sep</option>
+              <option value="4">T4 — Oct, Nov, Dic</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rango de fechas -->
+      <div class="periodo-panel" id="panel-rango">
+        <div class="grid-2" style="max-width:400px">
+          <div class="field">
+            <label>Fecha desde</label>
+            <input type="date" id="rango-desde">
+          </div>
+          <div class="field">
+            <label>Fecha hasta</label>
+            <input type="date" id="rango-hasta">
+          </div>
+        </div>
+      </div>
+
+      <!-- Año completo -->
+      <div class="periodo-panel" id="panel-anual">
+        <div class="field" style="max-width:200px">
+          <label>Año</label>
+          <select id="sel-anio-completo">
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generarInforme()">Generar informe</button>
+        <button class="btn btn-print" onclick="window.print()">🖨 Imprimir</button>
+        <button class="btn btn-pdf" onclick="exportarPDF()">↓ PDF</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INFORME -->
+  <div id="informe-wrap" style="display:none">
+
+    <div class="print-title">
+      <h2>COMITÉ ORNATO Y SEGURIDAD — NUEVO KENNEDY II SECTOR</h2>
+      <p id="print-periodo"></p>
+    </div>
+
+    <p class="periodo-lbl" id="periodo-lbl"></p>
+
+    <!-- RESUMEN -->
+    <div class="card">
+      <div class="card-header">Resumen financiero</div>
+      <div class="card-body">
+        <div class="resumen-grid">
+          <div class="res-card">
+            <div class="res-lbl">Total ingresos</div>
+            <div class="res-val green" id="r-total-ing">$ 0</div>
+          </div>
+          <div class="res-card">
+            <div class="res-lbl">Total salidas</div>
+            <div class="res-val red" id="r-total-sal">$ 0</div>
+          </div>
+          <div class="res-card">
+            <div class="res-lbl">Balance período</div>
+            <div class="res-val" id="r-balance">$ 0</div>
+          </div>
+          <div class="res-card">
+            <div class="res-lbl">Saldo en caja</div>
+            <div class="res-val green" id="r-saldo-caja">$ 0</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- INGRESOS POR CATEGORÍA -->
+    <div class="card">
+      <div class="card-header">Ingresos por concepto</div>
+      <div class="card-body">
+        <div id="barras-ing"></div>
+        <table id="tabla-cat-ing">
+          <thead><tr><th>Concepto</th><th>Registros</th><th>Total</th><th>%</th></tr></thead>
+          <tbody id="tbody-cat-ing"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SALIDAS POR CATEGORÍA -->
+    <div class="card">
+      <div class="card-header">Salidas por concepto</div>
+      <div class="card-body">
+        <div id="barras-sal"></div>
+        <table id="tabla-cat-sal">
+          <thead><tr><th>Concepto</th><th>Registros</th><th>Total</th><th>%</th></tr></thead>
+          <tbody id="tbody-cat-sal"></tbody>
+        </table>
+      </div>
+    </div>
+
+
+
+  </div><!-- /informe-wrap -->
+
+</div>
+
+<script>
+const API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+localStorage.setItem('nk2_api_url', API_URL);
+function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
+if (localStorage.getItem('nk2_role') === 'visor') {
+  const lnk = document.getElementById('lnk-volver');
+  if (lnk) { lnk.href = 'informe.html'; lnk.textContent = '← Inicio'; }
+}
+
+const BASE_INGRESOS = 3637452.26;
+const hoy = new Date();
+let periodoActivo = 'actual';
+let datosIng = [], datosSal = [];
+
+// Trimestre actual
+const mesActual = hoy.getMonth();
+const trimestreActual = Math.floor(mesActual / 3) + 1;
+const anioActual = hoy.getFullYear();
+const nombresTrim = ['', 'Ene–Mar', 'Abr–Jun', 'Jul–Sep', 'Oct–Dic'];
+document.getElementById('lbl-actual').textContent =
+  `T${trimestreActual} ${anioActual} (${nombresTrim[trimestreActual]})`;
+
+function switchPeriodo(p) {
+  periodoActivo = p;
+  document.querySelectorAll('.ptab').forEach((b,i) => {
+    const tabs = ['actual','manual','rango','anual'];
+    b.classList.toggle('active', tabs[i] === p);
+  });
+  document.querySelectorAll('.periodo-panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('panel-'+p).classList.add('active');
+}
+
+function getRango() {
+  if (periodoActivo === 'actual') {
+    const t = trimestreActual;
+    const meses = [[0,2],[3,5],[6,8],[9,11]];
+    const [m1, m2] = meses[t-1];
+    return {
+      desde: `${anioActual}-${pad(m1+1)}-01`,
+      hasta: `${anioActual}-${pad(m2+1)}-${ultimoDia(anioActual, m2+1)}`,
+      label: `Trimestre ${t} ${anioActual} (${nombresTrim[t]})`
+    };
+  }
+  if (periodoActivo === 'manual') {
+    const t = parseInt(document.getElementById('sel-trimestre').value);
+    const a = parseInt(document.getElementById('sel-anio').value);
+    const meses = [[0,2],[3,5],[6,8],[9,11]];
+    const [m1, m2] = meses[t-1];
+    return {
+      desde: `${a}-${pad(m1+1)}-01`,
+      hasta: `${a}-${pad(m2+1)}-${ultimoDia(a, m2+1)}`,
+      label: `Trimestre ${t} ${a} (${nombresTrim[t]})`
+    };
+  }
+  if (periodoActivo === 'rango') {
+    const desde = document.getElementById('rango-desde').value;
+    const hasta = document.getElementById('rango-hasta').value;
+    if (!desde || !hasta) { alert('Por favor selecciona las dos fechas.'); return null; }
+    return { desde, hasta, label: `${fmtFecha(desde)} — ${fmtFecha(hasta)}` };
+  }
+  if (periodoActivo === 'anual') {
+    const a = parseInt(document.getElementById('sel-anio-completo').value);
+    return { desde: `${a}-01-01`, hasta: `${a}-12-31`, label: `Año completo ${a}` };
+  }
+}
+
+const pad = n => String(n).padStart(2,'0');
+const ultimoDia = (a, m) => new Date(a, m, 0).getDate();
+const fmt = n => '$ ' + Math.round(parseFloat(n)||0).toLocaleString('es-CO');
+const pct = (v, t) => t > 0 ? ((v/t)*100).toFixed(1)+'%' : '0%';
+const fmtFecha = f => { if(!f) return ''; const d = new Date(f+'T12:00:00'); return d.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'}); };
+
+function apiFetch(action, params={}) {
+  const qs = new URLSearchParams({action, ...params});
+  return fetch(API_URL+'?'+qs).then(r => r.json());
+}
+
+async function generarInforme() {
+  const rango = getRango();
+  if (!rango) return;
+
+  document.getElementById('periodo-lbl').textContent = '📅 ' + rango.label;
+  document.getElementById('print-periodo').textContent = rango.label;
+
+  if (!datosIng.length || !datosSal.length) {
+    const [ing, sal] = await Promise.all([apiFetch('getIngresos'), apiFetch('getSalidas')]);
+    datosIng = ing || [];
+    datosSal = sal || [];
+  }
+
+  const ing = datosIng.filter(r => r[1] >= rango.desde && r[1] <= rango.hasta);
+  const sal = datosSal.filter(r => r[1] >= rango.desde && r[1] <= rango.hasta);
+
+  const totalIng = ing.reduce((s,r) => s+(parseFloat(r[12])||0), 0);
+  const totalSal = sal.reduce((s,r) => s+(parseFloat(r[8])||0), 0);
+  const balance = totalIng - totalSal;
+  const saldoCaja = BASE_INGRESOS + datosIng.reduce((s,r)=>s+(parseFloat(r[12])||0),0)
+                  - datosSal.reduce((s,r)=>s+(parseFloat(r[8])||0),0);
+
+  // Resumen
+  document.getElementById('r-total-ing').textContent = fmt(totalIng);
+  document.getElementById('r-total-sal').textContent = fmt(totalSal);
+  const balEl = document.getElementById('r-balance');
+  balEl.textContent = fmt(balance);
+  balEl.className = 'res-val ' + (balance >= 0 ? 'green' : 'red');
+  document.getElementById('r-saldo-caja').textContent = fmt(saldoCaja);
+
+
+  // Categorías ingresos
+  const catIng = {};
+  ing.forEach(r => {
+    const k = r[6]+' — '+r[7];
+    if (!catIng[k]) catIng[k] = {count:0, total:0};
+    catIng[k].count++; catIng[k].total += parseFloat(r[12])||0;
+  });
+  renderCat('tbody-cat-ing', 'barras-ing', catIng, totalIng, 'ing');
+
+  // Categorías salidas — nombres normalizados según el formulario
+  const CONC_SAL = {
+    '21': '21 — Vigilancia',
+    '22': '22 — Cafetería',
+    '23': '23 — Aseo',
+    '24': '24 — Papelería',
+    '25': '25 — Otros',
+    '26': '26 — Mantenimiento Gral.',
+    '27': '27 — Servicios públicos',
+    '28': '28 — Internet / Cel. Garita',
+    '29': '29 — Reconocimiento gestión admin.'
+  };
+  const catSal = {};
+  sal.forEach(r => {
+    const cod = String(r[4]).trim();
+    const k = CONC_SAL[cod] || (cod + ' — ' + (r[5]||'Sin concepto'));
+    if (!catSal[k]) catSal[k] = {count:0, total:0};
+    catSal[k].count++;
+    catSal[k].total += parseFloat(r[6])||0;   // r[6] = vlr_total
+  });
+  renderCat('tbody-cat-sal', 'barras-sal', catSal, totalSal, 'sal');
+
+
+
+  document.getElementById('informe-wrap').style.display = 'block';
+  document.getElementById('informe-wrap').scrollIntoView({behavior:'smooth'});
+}
+
+function renderCat(tbodyId, barrasId, cat, total, tipo) {
+  const sorted = Object.entries(cat).sort((a,b) => b[1].total - a[1].total);
+  const tbody = document.getElementById(tbodyId);
+  const barras = document.getElementById(barrasId);
+
+  if (!sorted.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Sin registros</td></tr>';
+    barras.innerHTML = '';
+    return;
+  }
+
+  barras.innerHTML = sorted.map(([k, v]) => `
+    <div class="bar-wrap">
+      <div class="bar-lbl"><span>${k}</span><span>${fmt(v.total)}</span></div>
+      <div class="bar-track"><div class="bar-fill ${tipo}" style="width:${pct(v.total,total)}"></div></div>
+    </div>
+  `).join('');
+
+  tbody.innerHTML = sorted.map(([k, v]) => `
+    <tr>
+      <td>${k}</td>
+      <td>${v.count}</td>
+      <td>${fmt(v.total)}</td>
+      <td>${pct(v.total, total)}</td>
+    </tr>
+  `).join('') + `<tr class="tr-total"><td>Total</td><td>${sorted.reduce((s,[,v])=>s+v.count,0)}</td><td>${fmt(total)}</td><td>100%</td></tr>`;
+}
+
+function exportarPDF() {
+  window.print();
+}
+
+
+</script>
+</body>
+</html>

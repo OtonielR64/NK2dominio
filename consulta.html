@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(localStorage.getItem('nk2_role')!=='admin')location.replace('login.html?next='+encodeURIComponent(location.href));</script>
+<title>Consultas NK2 — Comité Ornato y Seguridad</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --ing: #1a5c2a; --ing-light: #e8f5ec;
+    --sal: #7a1a1a; --sal-light: #faeaea;
+    --bg: #f4f3f0; --card: #fff; --border: #dddbd6;
+    --text: #1a1a18; --muted: #6b6b66;
+    --err: #c0392b; --amber: #854f0b;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .site-header { background: var(--text); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .site-header h1 { font-size: 13px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a { font-size: 12px; color: #aaa; text-decoration: none; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a:hover { color: #fff; }
+
+  .tab-bar { display: flex; background: #fff; border-bottom: 1px solid var(--border); padding: 0 24px; }
+  .tab-btn { padding: 14px 20px; font-size: 13px; font-weight: 500; border: none; background: none; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .2s; font-family: 'IBM Plex Sans', sans-serif; }
+  .tab-btn.active-ing { color: var(--ing); border-bottom-color: var(--ing); }
+  .tab-btn.active-sal { color: var(--sal); border-bottom-color: var(--sal); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+  .panel { display: none; } .panel.active { display: block; }
+
+  /* FILTROS */
+  .filtros { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; }
+  .filtros-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .field { display: flex; flex-direction: column; }
+  label { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; font-family: 'IBM Plex Mono', monospace; }
+  input, select { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; color: var(--text); font-family: 'IBM Plex Sans', sans-serif; outline: none; }
+  input:focus, select:focus { border-color: #999; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .btn { padding: 9px 18px; font-size: 13px; font-weight: 500; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-ing { background: var(--ing); color: #fff; border-color: var(--ing); }
+  .btn-sal { background: var(--sal); color: #fff; border-color: var(--sal); }
+  .btn-sec { background: #fff; color: var(--text); }
+  .btn-excel { background: #1d6f42; color: #fff; border-color: #1d6f42; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-edit { background: var(--amber); color: #fff; border-color: var(--amber); }
+  .btn-del { background: var(--err); color: #fff; border-color: var(--err); }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; font-family: 'IBM Plex Mono', monospace; margin-bottom: 4px; }
+  .stat-val { font-size: 18px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+  .stat-val.green { color: var(--ing); } .stat-val.red { color: var(--sal); }
+
+  /* TABLA */
+  .tabla-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .tabla-header { padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .tabla-header span { font-size: 13px; color: var(--muted); }
+  .tabla-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #fafaf8; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0ede8; vertical-align: middle; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-ing { background: var(--ing-light); color: var(--ing); }
+  .badge-sal { background: var(--sal-light); color: var(--sal); }
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+  .loading-row { text-align: center; padding: 30px; color: var(--muted); font-size: 13px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: var(--radius); padding: 20px 24px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; margin: 16px; }
+  .modal h2 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+  .modal .row { display: grid; gap: 10px; margin-bottom: 10px; }
+  .modal .row-2 { grid-template-columns: 1fr 1fr; }
+  .modal .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .modal .row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
+  .modal input, .modal select, .modal textarea { width: 100%; padding: 6px 9px; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius); font-family: 'IBM Plex Sans', sans-serif; }
+  .modal textarea { resize: none; height: 52px; }
+  label { font-size: 10px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* CONFIRM */
+  .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: center; justify-content: center; }
+  .confirm-overlay.show { display: flex; }
+  .confirm-box { background: #fff; border-radius: var(--radius); padding: 24px; width: 100%; max-width: 360px; margin: 16px; }
+  .confirm-box h3 { font-size: 15px; margin-bottom: 10px; }
+  .confirm-box p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .confirm-btns { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .api-config { background: #fffbea; border: 1px solid #f0d070; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; font-size: 13px; }
+  .api-config strong { display: block; margin-bottom: 6px; color: var(--amber); font-size: 12px; letter-spacing: .5px; }
+  .api-config input { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-bottom: 8px; }
+  .api-config button { padding: 7px 14px; background: var(--amber); color: #fff; border: none; border-radius: var(--radius); font-size: 12px; cursor: pointer; }
+
+  @media (max-width: 600px) { .filtros-grid { grid-template-columns: 1fr; } .stats { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <h1>Consultas · NK2</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <a href="index.html">← Volver a Formularios</a>
+    <button onclick="cerrarSesion()" style="background:#4a4a4a;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;">🔒 Salir</button>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active-ing" id="tab-ing" onclick="switchTab('ing')">Ingresos</button>
+  <button class="tab-btn" id="tab-sal" onclick="switchTab('sal')">Salidas</button>
+</div>
+
+<div class="container">
+
+  <div class="api-config" id="api-config-box" style="display:none">
+    <strong>⚙ CONFIGURACIÓN — URL DE LA API</strong>
+    <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/.../exec">
+    <button onclick="conectarAPI()">Conectar</button>
+  </div>
+
+  <!-- ══════ INGRESOS ══════ -->
+  <div class="panel active" id="panel-ing">
+
+    <div class="filtros">
+      <div class="filtros-grid">
+        <div class="field">
+          <label>Interior / Residente</label>
+          <select id="f-i-interior">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>N° Recibo</label>
+          <input type="number" id="f-i-recibo" placeholder="Ej: 10815">
+        </div>
+        <div class="field">
+          <label>Concepto</label>
+          <select id="f-i-concepto">
+            <option value="">Todos</option>
+            <option value="11">11 — Conserjería (casa)</option>
+            <option value="12">12 — Conserjería (vehículo)</option>
+            <option value="13">13 — Casa y vehículo(s)</option>
+            <option value="14">14 — Segundo vehículo</option>
+            <option value="15">15 — Vehículo externo</option>
+            <option value="16">16 — Parqueadero externo</option>
+            <option value="17">17 — Parqueadero moto</option>
+            <option value="18">18 — Moto externa</option>
+            <option value="19">19 — Otros</option>
+            <option value="20">20 — Aporte contributivo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha desde</label>
+          <input type="date" id="f-i-desde">
+        </div>
+        <div class="field">
+          <label>Fecha hasta</label>
+          <input type="date" id="f-i-hasta">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ing" onclick="buscarIngresos()">Buscar</button>
+        <button class="btn btn-sec" onclick="limpiarFiltrosIng()">Limpiar filtros</button>
+        <button class="btn btn-excel" onclick="exportarExcel('ing')">Exportar a Excel</button>
+      </div>
+    </div>
+
+    <div class="stats" id="stats-ing">
+      <div class="stat-card"><div class="stat-lbl">Registros</div><div class="stat-val" id="s-i-count">—</div></div>
+      <div class="stat-card"><div class="stat-lbl">Total ingresos</div><div class="stat-val green" id="s-i-total">—</div></div>
+    </div>
+
+    <div class="tabla-wrap">
+      <div class="tabla-header">
+        <strong>Resultados</strong>
+        <span id="lbl-ing">Cargando...</span>
+      </div>
+      <div class="tabla-scroll">
+        <table id="tabla-ing">
+          <thead>
+            <tr>
+              <th>Recibo</th><th>Fecha</th><th>Interior</th><th>Nombre</th>
+              <th>Concepto</th><th>Mes pago</th><th>Vlr Admón</th>
+              <th>Vlr Vehículo</th><th>Total</th><th>Observación</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-ing"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SALIDAS ══════ -->
+  <div class="panel" id="panel-sal">
+
+    <div class="filtros">
+      <div class="filtros-grid">
+        <div class="field">
+          <label>N° Registro</label>
+          <input type="text" id="f-s-cod" placeholder="Ej: NK-38">
+        </div>
+        <div class="field">
+          <label>Concepto</label>
+          <select id="f-s-concepto">
+            <option value="">Todos</option>
+            <option value="21">21 — Vigilancia</option>
+            <option value="22">22 — Cafetería</option>
+            <option value="23">23 — Aseo</option>
+            <option value="24">24 — Papelería</option>
+            <option value="25">25 — Otros</option>
+            <option value="26">26 — Mantenimiento Gral.</option>
+            <option value="27">27 — Servicios públicos</option>
+            <option value="28">28 — Internet/Cel. Garita</option>
+            <option value="29">29 — Reconocimiento gestión admin.</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha desde</label>
+          <input type="date" id="f-s-desde">
+        </div>
+        <div class="field">
+          <label>Fecha hasta</label>
+          <input type="date" id="f-s-hasta">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-sal" onclick="buscarSalidas()">Buscar</button>
+        <button class="btn btn-sec" onclick="limpiarFiltrosSal()">Limpiar filtros</button>
+        <button class="btn btn-excel" onclick="exportarExcel('sal')">Exportar a Excel</button>
+      </div>
+    </div>
+
+    <div class="stats" id="stats-sal">
+      <div class="stat-card"><div class="stat-lbl">Registros</div><div class="stat-val" id="s-s-count">—</div></div>
+      <div class="stat-card"><div class="stat-lbl">Total salidas</div><div class="stat-val red" id="s-s-total">—</div></div>
+      <div class="stat-card"><div class="stat-lbl">Total abonos</div><div class="stat-val" id="s-s-abono">—</div></div>
+      <div class="stat-card"><div class="stat-lbl">Saldo pendiente</div><div class="stat-val" style="color:var(--amber)" id="s-s-saldo">—</div></div>
+    </div>
+
+    <div class="tabla-wrap">
+      <div class="tabla-header">
+        <strong>Resultados</strong>
+        <span id="lbl-sal">Cargando...</span>
+      </div>
+      <div class="tabla-scroll">
+        <table id="tabla-sal">
+          <thead>
+            <tr>
+              <th>N° Reg.</th><th>Fecha</th><th>Administrador</th>
+              <th>Concepto</th><th>Vlr Total</th><th>Abono</th>
+              <th>Saldo</th><th>Observación</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-sal"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL EDITAR INGRESO -->
+<div class="modal-overlay" id="modal-ing">
+  <div class="modal">
+    <h2>Editar Ingreso</h2>
+    <input type="hidden" id="edit-i-row">
+    <div class="row row-4">
+      <div class="field"><label>Fecha</label><input type="date" id="edit-i-fecha"></div>
+      <div class="field"><label>N° Recibo</label><input type="number" id="edit-i-recibo"></div>
+      <div class="field"><label>Interior</label><input type="text" id="edit-i-interior"></div>
+      <div class="field"><label>Nombre</label><input type="text" id="edit-i-nombre"></div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Concepto</label>
+        <select id="edit-i-concepto">
+          <option value="11">11 — Conserjería (casa)</option>
+          <option value="12">12 — Conserjería (vehículo)</option>
+          <option value="13">13 — Casa y vehículo(s)</option>
+          <option value="14">14 — Segundo vehículo</option>
+          <option value="15">15 — Vehículo externo</option>
+          <option value="16">16 — Parqueadero externo</option>
+          <option value="17">17 — Parqueadero moto</option>
+          <option value="18">18 — Moto externa</option>
+          <option value="19">19 — Otros</option>
+          <option value="20">20 — Aporte contributivo</option>
+        </select>
+      </div>
+    </div>
+    <div class="row row-4">
+      <div class="field"><label>Vlr Admón</label><input type="number" id="edit-i-admon" oninput="editCalcTotal()"></div>
+      <div class="field"><label>Vlr Vehículo</label><input type="number" id="edit-i-vehiculo" oninput="editCalcTotal()"></div>
+      <div class="field"><label>Mes de pago</label><input type="text" id="edit-i-mes"></div>
+      <div class="field"><label>Cantidad</label><input type="number" id="edit-i-cantidad" oninput="editCalcTotal()"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Observación</label><textarea id="edit-i-obs"></textarea></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-sec" onclick="cerrarModal('modal-ing')">Cancelar</button>
+      <button class="btn btn-ing" onclick="guardarEdicionIng()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR SALIDA -->
+<div class="modal-overlay" id="modal-sal">
+  <div class="modal">
+    <h2>Editar Salida</h2>
+    <input type="hidden" id="edit-s-row">
+    <div class="row row-3">
+      <div class="field"><label>Fecha</label><input type="date" id="edit-s-fecha"></div>
+      <div class="field"><label>N° Registro</label><input type="text" id="edit-s-cod"></div>
+      <div class="field"><label>Administrador</label><input type="text" id="edit-s-admin"></div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Concepto</label>
+        <select id="edit-s-concepto">
+          <option value="21">21 — Vigilancia</option>
+          <option value="22">22 — Cafetería</option>
+          <option value="23">23 — Aseo</option>
+          <option value="24">24 — Papelería</option>
+          <option value="25">25 — Otros</option>
+          <option value="26">26 — Mantenimiento Gral.</option>
+          <option value="27">27 — Servicios públicos</option>
+          <option value="28">28 — Internet/Cel. Garita</option>
+          <option value="29">29 — Reconocimiento gestión admin.</option>
+        </select>
+      </div>
+    </div>
+    <div class="row row-3">
+      <div class="field"><label>Vlr Total</label><input type="number" id="edit-s-total"></div>
+      <div class="field"><label>Abono</label><input type="number" id="edit-s-abono"></div>
+      <div class="field"><label>Observación</label><textarea id="edit-s-obs" style="height:32px"></textarea></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-sec" onclick="cerrarModal('modal-sal')">Cancelar</button>
+      <button class="btn btn-sal" onclick="guardarEdicionSal()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRMAR ELIMINACIÓN -->
+<div class="confirm-overlay" id="confirm-box">
+  <div class="confirm-box">
+    <h3>¿Eliminar registro?</h3>
+    <p>Esta acción no se puede deshacer. El registro será eliminado permanentemente de Google Sheets.</p>
+    <div class="confirm-btns">
+      <button class="btn btn-sec" onclick="cerrarConfirm()">Cancelar</button>
+      <button class="btn btn-del" onclick="confirmarEliminar()">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+localStorage.setItem('nk2_api_url', API_URL);
+function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
+let datosIng = [], datosSal = [];
+let pendingDelete = null;
+
+cargarTodo();
+
+function conectarAPI() {
+  const url = document.getElementById('api-url-input').value.trim();
+  if (!url || !url.includes('script.google.com')) { alert('URL inválida.'); return; }
+  API_URL = url;
+  localStorage.setItem('nk2_api_url', API_URL);
+  document.getElementById('api-config-box').style.display = 'none';
+  cargarTodo();
+}
+
+function apiFetch(action, params = {}) {
+  const qs = new URLSearchParams({ action, ...params });
+  return fetch(API_URL + '?' + qs).then(r => r.json());
+}
+
+async function cargarTodo() {
+  setLoading('ing'); setLoading('sal');
+  try {
+    const [ing, sal, hab] = await Promise.all([
+      apiFetch('getIngresos'),
+      apiFetch('getSalidas'),
+      apiFetch('getHabitantes')
+    ]);
+    datosIng = ing || [];
+    datosSal = sal || [];
+    poblarFiltroInterior(hab || []);
+    renderIngresos(datosIng);
+    renderSalidas(datosSal);
+  } catch(e) {
+    document.getElementById('tbody-ing').innerHTML = '<tr><td colspan="11" class="empty">Error de conexión</td></tr>';
+    document.getElementById('tbody-sal').innerHTML = '<tr><td colspan="9" class="empty">Error de conexión</td></tr>';
+  }
+}
+
+function setLoading(t) {
+  const id = t === 'ing' ? 'tbody-ing' : 'tbody-sal';
+  const cols = t === 'ing' ? 11 : 9;
+  document.getElementById(id).innerHTML = `<tr><td colspan="${cols}" class="loading-row">Cargando registros...</td></tr>`;
+}
+
+function poblarFiltroInterior(hab) {
+  const sel = document.getElementById('f-i-interior');
+  sel.innerHTML = '<option value="">Todos</option>';
+  hab.forEach(h => {
+    const o = document.createElement('option');
+    o.value = h.int; o.textContent = h.int + ' — ' + h.nombre;
+    sel.appendChild(o);
+  });
+}
+
+const parseMoney = n => {
+  if (typeof n === 'number') return n;
+  const s = String(n).replace(/[\s$]/g, '');
+  if (!s) return 0;
+  // Formato colombiano: "15.000" o "15.000,50" (punto = miles, coma = decimal)
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s))
+    return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+  return parseFloat(s) || 0;
+};
+const fmt = n => '$ ' + Math.round(parseMoney(n)).toLocaleString('es-CO');
+const fmtMes = m => {
+  if (!m) return '';
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const match = String(m).match(/^(\d{4})-(\d{2})/);
+  if (match) return meses[parseInt(match[2]) - 1] + '-' + match[1];
+  return m;
+};
+const fmtFecha = f => { if(!f) return ''; const d = new Date(f + 'T12:00:00'); return d.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'}); };
+
+// ══════════ INGRESOS ══════════
+function renderIngresos(data) {
+  const tbody = document.getElementById('tbody-ing');
+  document.getElementById('lbl-ing').textContent = data.length + ' registros encontrados';
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="11" class="empty">No se encontraron registros</td></tr>'; updateStatsIng([]); return; }
+  tbody.innerHTML = data.map(r => {
+    const gi = datosIng.indexOf(r);
+    return `
+    <tr>
+      <td><span class="badge badge-ing">${r[0]}</span></td>
+      <td>${fmtFecha(r[1])}</td>
+      <td>${r[2]}</td>
+      <td>${r[3]}</td>
+      <td>${r[6]} — ${r[7]}</td>
+      <td>${fmtMes(r[10])}</td>
+      <td>${fmt(r[8])}</td>
+      <td>${fmt(r[9])}</td>
+      <td><strong>${fmt(r[12])}</strong></td>
+      <td style="max-width:150px;white-space:normal;font-size:12px">${r[13]||''}</td>
+      <td>
+        <button class="btn btn-sm btn-edit" onclick="abrirEditIng(${gi})">Editar</button>
+        <button class="btn btn-sm btn-del" style="margin-left:4px" onclick="abrirConfirm('ing',${gi})">Eliminar</button>
+      </td>
+    </tr>`;
+  }).join('');
+  updateStatsIng(data);
+}
+
+function updateStatsIng(data) {
+  document.getElementById('s-i-count').textContent = data.length;
+  const total = data.reduce((s, r) => s + (parseFloat(r[12])||0), 0);
+  document.getElementById('s-i-total').textContent = fmt(total);
+}
+
+function buscarIngresos() {
+  const interior = document.getElementById('f-i-interior').value;
+  const recibo = document.getElementById('f-i-recibo').value;
+  const concepto = document.getElementById('f-i-concepto').value;
+  const desde = document.getElementById('f-i-desde').value;
+  const hasta = document.getElementById('f-i-hasta').value;
+  let filtrado = [...datosIng];
+  if (interior) filtrado = filtrado.filter(r => String(r[2]) === interior);
+  if (recibo)   filtrado = filtrado.filter(r => String(r[0]) === recibo);
+  if (concepto) filtrado = filtrado.filter(r => String(r[6]) === concepto);
+  if (desde)    filtrado = filtrado.filter(r => r[1] >= desde);
+  if (hasta)    filtrado = filtrado.filter(r => r[1] <= hasta);
+  renderIngresos(filtrado);
+}
+
+function limpiarFiltrosIng() {
+  ['f-i-interior','f-i-concepto'].forEach(id => document.getElementById(id).value = '');
+  ['f-i-recibo','f-i-desde','f-i-hasta'].forEach(id => document.getElementById(id).value = '');
+  renderIngresos(datosIng);
+}
+
+// ══════════ SALIDAS ══════════
+function renderSalidas(data) {
+  const tbody = document.getElementById('tbody-sal');
+  document.getElementById('lbl-sal').textContent = data.length + ' registros encontrados';
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">No se encontraron registros</td></tr>'; updateStatsSal([]); return; }
+  tbody.innerHTML = data.map(r => {
+    const gi = datosSal.indexOf(r);
+    return `
+    <tr>
+      <td><span class="badge badge-sal">${r[0]}</span></td>
+      <td>${fmtFecha(r[1])}</td>
+      <td>${r[3]}</td>
+      <td>${r[4]} — ${r[5]}</td>
+      <td>${fmt(r[6])}</td>
+      <td>${fmt(r[7])}</td>
+      <td style="color:${parseFloat(r[8])>0?'var(--amber)':'var(--ing)'}">${fmt(r[8])}</td>
+      <td style="max-width:150px;white-space:normal;font-size:12px">${r[9]||''}</td>
+      <td>
+        <button class="btn btn-sm btn-edit" onclick="abrirEditSal(${gi})">Editar</button>
+        <button class="btn btn-sm btn-del" style="margin-left:4px" onclick="abrirConfirm('sal',${gi})">Eliminar</button>
+      </td>
+    </tr>`;
+  }).join('');
+  updateStatsSal(data);
+}
+
+function updateStatsSal(data) {
+  document.getElementById('s-s-count').textContent = data.length;
+  const total = data.reduce((s,r) => s+(parseFloat(r[6])||0), 0);
+  const abono = data.reduce((s,r) => s+(parseFloat(r[7])||0), 0);
+  const saldo = data.reduce((s,r) => s+(parseFloat(r[8])||0), 0);
+  document.getElementById('s-s-total').textContent = fmt(total);
+  document.getElementById('s-s-abono').textContent = fmt(abono);
+  document.getElementById('s-s-saldo').textContent = fmt(saldo);
+}
+
+function buscarSalidas() {
+  const cod = document.getElementById('f-s-cod').value.trim().toLowerCase();
+  const concepto = document.getElementById('f-s-concepto').value;
+  const desde = document.getElementById('f-s-desde').value;
+  const hasta = document.getElementById('f-s-hasta').value;
+  let filtrado = [...datosSal];
+  if (cod)     filtrado = filtrado.filter(r => String(r[0]).toLowerCase().includes(cod));
+  if (concepto) filtrado = filtrado.filter(r => String(r[4]) === concepto);
+  if (desde)   filtrado = filtrado.filter(r => r[1] >= desde);
+  if (hasta)   filtrado = filtrado.filter(r => r[1] <= hasta);
+  renderSalidas(filtrado);
+}
+
+function limpiarFiltrosSal() {
+  ['f-s-concepto'].forEach(id => document.getElementById(id).value = '');
+  ['f-s-cod','f-s-desde','f-s-hasta'].forEach(id => document.getElementById(id).value = '');
+  renderSalidas(datosSal);
+}
+
+// ══════════ TABS ══════════
+function switchTab(t) {
+  document.getElementById('panel-ing').classList.toggle('active', t==='ing');
+  document.getElementById('panel-sal').classList.toggle('active', t==='sal');
+  document.getElementById('tab-ing').className = 'tab-btn'+(t==='ing'?' active-ing':'');
+  document.getElementById('tab-sal').className = 'tab-btn'+(t==='sal'?' active-sal':'');
+}
+
+// ══════════ EDITAR INGRESO ══════════
+function abrirEditIng(i) {
+  const r = datosIng[i];
+  document.getElementById('edit-i-row').value = i;
+  document.getElementById('edit-i-fecha').value = r[1];
+  document.getElementById('edit-i-recibo').value = r[0];
+  document.getElementById('edit-i-interior').value = r[2];
+  document.getElementById('edit-i-nombre').value = r[3];
+  document.getElementById('edit-i-concepto').value = r[6];
+  document.getElementById('edit-i-admon').value = r[8]||0;
+  document.getElementById('edit-i-vehiculo').value = r[9]||0;
+  document.getElementById('edit-i-mes').value = fmtMes(r[10]);
+  document.getElementById('edit-i-cantidad').value = r[11]||1;
+  document.getElementById('edit-i-obs').value = r[13]||'';
+  document.getElementById('modal-ing').classList.add('show');
+}
+
+function editCalcTotal() {
+  const a = parseFloat(document.getElementById('edit-i-admon').value)||0;
+  const v = parseFloat(document.getElementById('edit-i-vehiculo').value)||0;
+  const c = parseInt(document.getElementById('edit-i-cantidad').value)||1;
+}
+
+async function guardarEdicionIng() {
+  const i = parseInt(document.getElementById('edit-i-row').value);
+  const selConc = document.getElementById('edit-i-concepto');
+  const a = parseFloat(document.getElementById('edit-i-admon').value)||0;
+  const v = parseFloat(document.getElementById('edit-i-vehiculo').value)||0;
+  const c = parseInt(document.getElementById('edit-i-cantidad').value)||1;
+  const params = {
+    rowIndex: i + 2,
+    factura: document.getElementById('edit-i-recibo').value,
+    fecha: document.getElementById('edit-i-fecha').value,
+    interior: document.getElementById('edit-i-interior').value,
+    nombre: document.getElementById('edit-i-nombre').value,
+    cod_concepto: selConc.value,
+    concepto: selConc.options[selConc.selectedIndex].text.split(' — ')[1]||'',
+    vlr_admon: a, vlr_vehiculo: v, cantidad: c,
+    total: (a+v)*c,
+    mes_pago: document.getElementById('edit-i-mes').value,
+    observacion: document.getElementById('edit-i-obs').value
+  };
+  try {
+    const res = await apiFetch('updateIngreso', params);
+    if(res.ok){ cerrarModal('modal-ing'); await cargarTodo(); alert('Registro actualizado correctamente.'); }
+    else alert('Error: ' + res.error);
+  } catch(e) { alert('Error de conexión.'); }
+}
+
+// ══════════ EDITAR SALIDA ══════════
+function abrirEditSal(i) {
+  const r = datosSal[i];
+  document.getElementById('edit-s-row').value = i;
+  document.getElementById('edit-s-fecha').value = r[1];
+  document.getElementById('edit-s-cod').value = r[0];
+  document.getElementById('edit-s-admin').value = r[3];
+  document.getElementById('edit-s-concepto').value = r[4];
+  document.getElementById('edit-s-total').value = r[6]||0;
+  document.getElementById('edit-s-abono').value = r[7]||0;
+  document.getElementById('edit-s-obs').value = r[9]||'';
+  document.getElementById('modal-sal').classList.add('show');
+}
+
+async function guardarEdicionSal() {
+  const i = parseInt(document.getElementById('edit-s-row').value);
+  const selConc = document.getElementById('edit-s-concepto');
+  const total = parseFloat(document.getElementById('edit-s-total').value)||0;
+  const abono = parseFloat(document.getElementById('edit-s-abono').value)||0;
+  const params = {
+    rowIndex: i + 2,
+    cod_registro: document.getElementById('edit-s-cod').value,
+    fecha: document.getElementById('edit-s-fecha').value,
+    administrador: document.getElementById('edit-s-admin').value,
+    cod_concepto: selConc.value,
+    concepto: selConc.options[selConc.selectedIndex].text.split(' — ')[1]||'',
+    vlr_total: total, abono, saldo: total - abono,
+    observacion: document.getElementById('edit-s-obs').value
+  };
+  try {
+    const res = await apiFetch('updateSalida', params);
+    if(res.ok){ cerrarModal('modal-sal'); await cargarTodo(); alert('Registro actualizado correctamente.'); }
+    else alert('Error: ' + res.error);
+  } catch(e) { alert('Error de conexión.'); }
+}
+
+// ══════════ ELIMINAR ══════════
+function abrirConfirm(tipo, i) {
+  pendingDelete = { tipo, i };
+  document.getElementById('confirm-box').classList.add('show');
+}
+function cerrarConfirm() {
+  pendingDelete = null;
+  document.getElementById('confirm-box').classList.remove('show');
+}
+async function confirmarEliminar() {
+  if (!pendingDelete) return;
+  const { tipo, i } = pendingDelete;
+  const rowIndex = i + 2;
+  cerrarConfirm();
+  try {
+    const res = await apiFetch('deleteRow', { sheet: tipo === 'ing' ? 'BD_INGRESOS' : 'BD_SALIDAS', rowIndex });
+    if(res.ok){ await cargarTodo(); alert('Registro eliminado correctamente.'); }
+    else alert('Error: ' + res.error);
+  } catch(e) { alert('Error de conexión.'); }
+}
+
+// ══════════ EXPORTAR EXCEL ══════════
+function exportarExcel(tipo) {
+  const data = tipo === 'ing' ? datosIng : datosSal;
+  if (!data.length) { alert('No hay datos para exportar.'); return; }
+  const headers = tipo === 'ing'
+    ? ['Recibo','Fecha','Interior','Nombre','Cod Admin','Administrador','Cod Concepto','Concepto','Vlr Admón','Vlr Vehículo','Mes Pago','Cantidad','Total','Observación']
+    : ['N° Registro','Fecha','Cod Admin','Administrador','Cod Concepto','Concepto','Vlr Total','Abono','Saldo','Observación'];
+  const csv = [headers.join(','), ...data.map(r => r.map(c => '"'+(c||'')+'"').join(','))].join('\n');
+  const blob = new Blob(['\ufeff'+csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `NK2_${tipo === 'ing' ? 'Ingresos' : 'Salidas'}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ══════════ MODAL ══════════
+function cerrarModal(id) { document.getElementById(id).classList.remove('show'); }
+document.getElementById('modal-ing').addEventListener('click', e => { if(e.target === e.currentTarget) cerrarModal('modal-ing'); });
+document.getElementById('modal-sal').addEventListener('click', e => { if(e.target === e.currentTarget) cerrarModal('modal-sal'); });
+</script>
+</body>
+</html>

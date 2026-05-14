@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(localStorage.getItem('nk2_role')!=='admin')location.replace('login.html?next='+encodeURIComponent(location.href));</script>
+<title>Control de Abonos — NK2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --ing: #1a5c2a; --ing-light: #e8f5ec;
+    --sal: #7a1a1a; --sal-light: #faeaea;
+    --bg: #f4f3f0; --card: #fff; --border: #dddbd6;
+    --text: #1a1a18; --muted: #6b6b66;
+    --amber: #854f0b; --amber-light: #fdf3e3;
+    --err: #c0392b; --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  .site-header { background: var(--text); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .site-header h1 { font-size: 13px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a { font-size: 12px; color: #aaa; text-decoration: none; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a:hover { color: #fff; }
+
+  .container { max-width: 750px; margin: 0 auto; padding: 24px 16px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+  .card-header { padding: 12px 18px; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); }
+  .card-header.sal { background: var(--sal); color: #fff; }
+  .card-header.dark { background: var(--text); color: #fff; }
+  .card-body { padding: 18px; }
+
+  .toast { display: none; background: #fdf3f2; border: 1px solid #f5c6c6; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: var(--err); }
+  .toast.show { display: block; }
+  .toast strong { display: block; margin-bottom: 6px; }
+  .toast ul { padding-left: 18px; }
+  .toast ul li { margin: 3px 0; }
+  .success { display: none; background: var(--ing-light); border: 1px solid #a8d5b5; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: var(--ing); font-weight: 500; }
+  .success.show { display: block; }
+
+  .row { display: grid; gap: 12px; margin-bottom: 14px; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; }
+  label { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; font-family: 'IBM Plex Mono', monospace; }
+  input, select, textarea { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; color: var(--text); font-family: 'IBM Plex Sans', sans-serif; outline: none; transition: border-color .15s; }
+  input.auto { background: #fafaf8; }
+  input.err, select.err, textarea.err { border-color: var(--err); background: #fff8f8; }
+  input[readonly] { background: #fafaf8; color: var(--muted); }
+  textarea { resize: none; height: 60px; }
+  .err-msg { font-size: 11px; color: var(--err); margin-top: 4px; min-height: 14px; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* BUSCAR REGISTRO */
+  .buscar-wrap { display: flex; gap: 10px; align-items: flex-end; }
+  .buscar-wrap input { flex: 1; }
+  .btn-buscar { padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; background: var(--text); color: #fff; font-family: 'IBM Plex Sans', sans-serif; white-space: nowrap; }
+
+  /* INFO REGISTRO */
+  .registro-info { background: #fafaf8; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; display: none; }
+  .registro-info.show { display: block; }
+  .reg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .reg-item { display: flex; flex-direction: column; }
+  .reg-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; font-family: 'IBM Plex Mono', monospace; margin-bottom: 3px; }
+  .reg-val { font-size: 14px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+  .reg-val.red { color: var(--sal); }
+  .reg-val.green { color: var(--ing); }
+  .reg-val.amber { color: var(--amber); }
+
+  /* TOTALES */
+  .totales { background: #fafaf8; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin: 16px 0; }
+  .tot-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; }
+  .tot-row.main { font-size: 16px; font-weight: 600; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 8px; }
+  .tot-lbl { color: var(--muted); font-size: 12px; }
+  .tot-val { font-weight: 500; font-family: 'IBM Plex Mono', monospace; }
+  .tot-val.green { color: var(--ing); }
+  .tot-val.red { color: var(--sal); }
+  .tot-val.amber { color: var(--amber); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+  .btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .btn { padding: 10px; font-size: 13px; font-weight: 500; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-sal { background: var(--sal); color: #fff; border-color: var(--sal); }
+  .btn-sec { background: #fff; color: var(--text); }
+  .btn-cancel { background: #444; color: #fff; border-color: #444; }
+
+  .spinner { display: none; width: 16px; height: 16px; border: 2px solid #ccc; border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; margin: 0 auto; }
+  .btn.loading .btn-txt { display: none; } .btn.loading .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* HISTORIAL */
+  .tabla-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #fafaf8; padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid #f0ede8; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  .tr-total td { font-weight: 600; background: #fafaf8; border-top: 1px solid var(--border); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-sal { background: var(--sal-light); color: var(--sal); }
+  .badge-ok { background: var(--ing-light); color: var(--ing); }
+  .empty { text-align: center; padding: 30px; color: var(--muted); font-size: 13px; }
+
+  /* BARRA PROGRESO */
+  .progress-wrap { margin: 12px 0; }
+  .progress-lbl { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: var(--muted); }
+  .progress-track { background: #f0ede8; border-radius: 6px; height: 12px; }
+  .progress-fill { height: 12px; border-radius: 6px; background: var(--ing); transition: width .4s; }
+
+  @media (max-width: 480px) { .row-2, .row-3 { grid-template-columns: 1fr; } .btns { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <h1>Control de Abonos · NK2</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <a href="index.html">← Volver a Formularios</a>
+    <button onclick="cerrarSesion()" style="background:#4a4a4a;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;">🔒 Salir</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- BUSCAR REGISTRO -->
+  <div class="card">
+    <div class="card-header dark">Buscar registro de gasto</div>
+    <div class="card-body">
+      <div class="field" style="margin-bottom:0">
+        <label>N° Registro en BD_SALIDAS</label>
+        <div class="buscar-wrap">
+          <input type="text" id="buscar-cod" placeholder="Ej: NK-21" onkeydown="if(event.key==='Enter') buscarRegistro()">
+          <button class="btn-buscar" onclick="buscarRegistro()">Buscar</button>
+        </div>
+        <span class="hint">Escribe el código del gasto y presiona Buscar o Enter</span>
+      </div>
+
+      <!-- INFO DEL REGISTRO ENCONTRADO -->
+      <div class="registro-info" id="registro-info">
+        <div class="reg-grid">
+          <div class="reg-item"><span class="reg-lbl">N° Registro</span><span class="reg-val" id="ri-cod">—</span></div>
+          <div class="reg-item"><span class="reg-lbl">Concepto</span><span class="reg-val" id="ri-concepto" style="font-size:12px;font-family:'IBM Plex Sans',sans-serif">—</span></div>
+          <div class="reg-item"><span class="reg-lbl">Valor total obra</span><span class="reg-val red" id="ri-total">—</span></div>
+          <div class="reg-item"><span class="reg-lbl">Abonado</span><span class="reg-val amber" id="ri-abonado">—</span></div>
+          <div class="reg-item"><span class="reg-lbl">Saldo pendiente</span><span class="reg-val" id="ri-saldo">—</span></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-lbl">
+            <span>Progreso de pago</span>
+            <span id="ri-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="ri-barra" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMULARIO ABONO -->
+  <div class="card" id="form-abono-card" style="display:none">
+    <div class="card-header sal">Registrar nuevo abono — <span id="form-cod-lbl"></span></div>
+    <div class="card-body">
+
+      <div id="toast-abono" class="toast"></div>
+      <div id="success-abono" class="success"></div>
+
+      <div class="row row-2">
+        <div class="field">
+          <label>Fecha *</label>
+          <input type="date" id="ab-fecha" class="auto">
+          <span class="hint">Editable</span>
+          <span class="err-msg" id="e-ab-fecha"></span>
+        </div>
+        <div class="field">
+          <label>Administrador *</label>
+          <select id="ab-admin">
+            <option value="">-- seleccionar --</option>
+          </select>
+          <span class="err-msg" id="e-ab-admin"></span>
+        </div>
+      </div>
+
+      <div class="row row-3">
+        <div class="field">
+          <label>Valor total obra</label>
+          <input type="number" id="ab-total" readonly>
+        </div>
+        <div class="field">
+          <label>Ya abonado</label>
+          <input type="number" id="ab-ya-abonado" readonly>
+        </div>
+        <div class="field">
+          <label>Saldo actual</label>
+          <input type="number" id="ab-saldo-actual" readonly>
+        </div>
+      </div>
+
+      <div class="row row-2">
+        <div class="field">
+          <label>Valor abono actual ($) *</label>
+          <input type="number" id="ab-abono" min="0" value="0" oninput="abCalc()">
+          <span class="err-msg" id="e-ab-abono"></span>
+        </div>
+        <div class="field">
+          <label>Saldo después del abono</label>
+          <input type="number" id="ab-saldo-nuevo" readonly value="0">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Observación *</label>
+          <textarea id="ab-obs" placeholder="Ej: 2do abono obra mantenimiento fachada..."></textarea>
+          <span class="err-msg" id="e-ab-obs"></span>
+        </div>
+      </div>
+
+      <div class="totales">
+        <div class="tot-row main">
+          <span>Abono a registrar</span>
+          <span class="tot-val red" id="ab-disp-abono">$ 0</span>
+        </div>
+        <div class="tot-row">
+          <span class="tot-lbl">Saldo anterior</span>
+          <span class="tot-val amber" id="ab-disp-saldo-ant">$ 0</span>
+        </div>
+        <div class="tot-row">
+          <span class="tot-lbl">Saldo después del abono</span>
+          <span class="tot-val" id="ab-disp-saldo-nuevo">$ 0</span>
+        </div>
+        <hr class="divider">
+        <div class="tot-row">
+          <span class="tot-lbl">Valor total obra</span>
+          <span class="tot-val" id="ab-disp-total">$ 0</span>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn btn-sal" id="btn-guardar-ab" onclick="abGuardar()">
+          <span class="btn-txt">Guardar abono</span>
+          <span class="spinner"></span>
+        </button>
+        <button class="btn btn-sec" onclick="abLimpiar()">Limpiar</button>
+        <button class="btn btn-cancel" onclick="cerrarFormulario()">Cancelar</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="card" id="historial-card" style="display:none">
+    <div class="card-header dark">Historial de abonos — <span id="hist-cod-lbl"></span></div>
+    <div class="tabla-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Fecha</th>
+            <th>Administrador</th>
+            <th>Concepto</th>
+            <th>Vlr Total Obra</th>
+            <th>Abono</th>
+            <th>Saldo</th>
+            <th>Observación</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-hist"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+localStorage.setItem('nk2_api_url', API_URL);
+function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
+
+const hoy = new Date();
+const pad = n => String(n).padStart(2,'0');
+const fechaISO = hoy.getFullYear()+'-'+pad(hoy.getMonth()+1)+'-'+pad(hoy.getDate());
+document.getElementById('ab-fecha').value = fechaISO;
+
+const fmt = n => '$ '+Math.round(parseFloat(n)||0).toLocaleString('es-CO');
+const fmtFecha = f => { if(!f) return ''; const d=new Date(f+'T12:00:00'); return d.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'}); };
+
+let registroActual = null;
+
+function apiFetch(action, params={}) {
+  return fetch(API_URL+'?'+new URLSearchParams({action,...params})).then(r=>r.json());
+}
+
+// Cargar personal
+async function cargarPersonal() {
+  const per = await apiFetch('getPersonal');
+  const sel = document.getElementById('ab-admin');
+  sel.innerHTML = '<option value="">-- seleccionar --</option>';
+  (per||[]).forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.id; o.dataset.nombre = p.nombre;
+    o.textContent = p.nombre+' — '+p.cargo;
+    sel.appendChild(o);
+  });
+}
+cargarPersonal();
+
+async function buscarRegistro() {
+  const cod = document.getElementById('buscar-cod').value.trim();
+  if (!cod) { alert('Escribe el N° de registro a buscar.'); return; }
+
+  const salidas = await apiFetch('getSalidas');
+  const reg = (salidas||[]).find(r => String(r[0]).trim().toLowerCase() === cod.toLowerCase());
+
+  if (!reg) {
+    alert(`No se encontró el registro "${cod}" en BD_SALIDAS.`);
+    document.getElementById('registro-info').classList.remove('show');
+    document.getElementById('form-abono-card').style.display = 'none';
+    document.getElementById('historial-card').style.display = 'none';
+    return;
+  }
+
+  const vlrTotal = parseFloat(reg[6])||0;
+  const abonado = parseFloat(reg[7])||0;
+  const saldo = parseFloat(reg[8])||0;
+  const pct = vlrTotal > 0 ? Math.min(100, Math.round((abonado/vlrTotal)*100)) : 0;
+
+  registroActual = { cod: reg[0], concepto: reg[5], vlrTotal, abonado, saldo };
+
+  // Mostrar info
+  document.getElementById('ri-cod').textContent = reg[0];
+  document.getElementById('ri-concepto').textContent = reg[4]+' — '+reg[5];
+  document.getElementById('ri-total').textContent = fmt(vlrTotal);
+  document.getElementById('ri-abonado').textContent = fmt(abonado);
+  const saldoEl = document.getElementById('ri-saldo');
+  saldoEl.textContent = fmt(saldo);
+  saldoEl.className = 'reg-val '+(saldo <= 0 ? 'green' : 'amber');
+  document.getElementById('ri-pct').textContent = pct+'%';
+  document.getElementById('ri-barra').style.width = pct+'%';
+  document.getElementById('registro-info').classList.add('show');
+
+  // Llenar formulario
+  document.getElementById('ab-total').value = vlrTotal;
+  document.getElementById('ab-ya-abonado').value = abonado;
+  document.getElementById('ab-saldo-actual').value = saldo;
+  document.getElementById('ab-abono').value = 0;
+  document.getElementById('ab-saldo-nuevo').value = saldo;
+  document.getElementById('ab-disp-saldo-ant').textContent = fmt(saldo);
+  document.getElementById('ab-disp-total').textContent = fmt(vlrTotal);
+  document.getElementById('ab-disp-abono').textContent = '$ 0';
+  document.getElementById('ab-disp-saldo-nuevo').textContent = fmt(saldo);
+  document.getElementById('form-cod-lbl').textContent = reg[0];
+  document.getElementById('hist-cod-lbl').textContent = reg[0];
+
+  if (saldo <= 0) {
+    document.getElementById('form-abono-card').style.display = 'none';
+    alert('Este registro ya está completamente pagado.');
+  } else {
+    document.getElementById('form-abono-card').style.display = 'block';
+  }
+
+  // Cargar historial
+  const abonos = await apiFetch('getAbonos', { cod_registro: reg[0] });
+  renderHistorial(abonos||[]);
+
+  document.getElementById('historial-card').style.display = 'block';
+}
+
+function abCalc() {
+  if (!registroActual) return;
+  const abono = parseFloat(document.getElementById('ab-abono').value)||0;
+  const saldoNuevo = Math.max(0, registroActual.saldo - abono);
+  document.getElementById('ab-saldo-nuevo').value = saldoNuevo;
+  document.getElementById('ab-disp-abono').textContent = fmt(abono);
+  document.getElementById('ab-disp-saldo-ant').textContent = fmt(registroActual.saldo);
+  document.getElementById('ab-disp-saldo-nuevo').textContent = fmt(saldoNuevo);
+  const el = document.getElementById('ab-disp-saldo-nuevo');
+  el.className = 'tot-val '+(saldoNuevo <= 0 ? 'green' : 'amber');
+}
+
+function markErr(id,msg){ document.getElementById(id)?.classList.add('err'); const e=document.getElementById('e-'+id); if(e)e.textContent=msg; }
+function clearAllErr(){ document.querySelectorAll('[id^="ab-"]').forEach(el=>{if(el.classList)el.classList.remove('err');}); document.querySelectorAll('[id^="e-ab-"]').forEach(el=>el.textContent=''); }
+function showToast(errs){ const t=document.getElementById('toast-abono'); if(!errs.length){t.classList.remove('show');return;} t.innerHTML='<strong>Por favor completa:</strong><ul>'+errs.map(e=>'<li>'+e+'</li>').join('')+'</ul>'; t.classList.add('show'); t.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+
+async function abGuardar() {
+  clearAllErr();
+  const errs = [];
+  if (!registroActual) return;
+  if (!document.getElementById('ab-fecha').value){ markErr('ab-fecha','Requerido'); errs.push('Fecha'); }
+  if (!document.getElementById('ab-admin').value){ markErr('ab-admin','Requerido'); errs.push('Administrador'); }
+  const abono = parseFloat(document.getElementById('ab-abono').value)||0;
+  if (abono <= 0){ markErr('ab-abono','Debe ser mayor a cero'); errs.push('Valor abono'); }
+  if (abono > registroActual.saldo){ markErr('ab-abono','El abono supera el saldo pendiente'); errs.push('Abono supera el saldo'); }
+  if (!document.getElementById('ab-obs').value.trim()){ markErr('ab-obs','Requerido'); errs.push('Observación'); }
+  showToast(errs);
+  if (errs.length) return;
+
+  const selAdmin = document.getElementById('ab-admin');
+  const datos = {
+    cod_registro: registroActual.cod,
+    fecha: document.getElementById('ab-fecha').value,
+    administrador: selAdmin.options[selAdmin.selectedIndex].dataset.nombre,
+    concepto: registroActual.concepto,
+    vlr_total_obra: registroActual.vlrTotal,
+    vlr_abono: abono,
+    observacion: document.getElementById('ab-obs').value.trim()
+  };
+
+  document.getElementById('btn-guardar-ab').classList.add('loading');
+  try {
+    const res = await apiFetch('saveAbono', datos);
+    if (res.ok) {
+      const el = document.getElementById('success-abono');
+      el.textContent = '✓ '+res.mensaje;
+      el.classList.add('show');
+      setTimeout(()=>el.classList.remove('show'), 5000);
+      document.getElementById('toast-abono').classList.remove('show');
+      // Recargar
+      await buscarRegistro();
+      abLimpiar();
+    } else {
+      alert('Error: '+res.error);
+    }
+  } catch(e) { alert('Error de conexión.'); }
+  document.getElementById('btn-guardar-ab').classList.remove('loading');
+}
+
+function abLimpiar() {
+  document.getElementById('ab-fecha').value = fechaISO;
+  document.getElementById('ab-admin').value = '';
+  document.getElementById('ab-abono').value = 0;
+  document.getElementById('ab-obs').value = '';
+  clearAllErr();
+  if (registroActual) {
+    document.getElementById('ab-saldo-nuevo').value = registroActual.saldo;
+    document.getElementById('ab-disp-abono').textContent = '$ 0';
+    document.getElementById('ab-disp-saldo-nuevo').textContent = fmt(registroActual.saldo);
+  }
+}
+
+function cerrarFormulario() {
+  document.getElementById('form-abono-card').style.display = 'none';
+  document.getElementById('historial-card').style.display = 'none';
+  document.getElementById('registro-info').classList.remove('show');
+  document.getElementById('buscar-cod').value = '';
+  registroActual = null;
+}
+
+function renderHistorial(abonos) {
+  const tbody = document.getElementById('tbody-hist');
+  if (!abonos.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Sin abonos registrados aún para este código</td></tr>';
+    return;
+  }
+  let totalAbonado = 0;
+  tbody.innerHTML = abonos.map((r, i) => {
+    totalAbonado += parseFloat(r[5])||0;
+    const saldo = parseFloat(r[6])||0;
+    return `<tr>
+      <td><span class="badge ${saldo<=0?'badge-ok':'badge-sal'}">${i+1}</span></td>
+      <td>${fmtFecha(r[1])}</td>
+      <td>${r[2]}</td>
+      <td style="font-size:12px">${r[3]}</td>
+      <td>${fmt(r[4])}</td>
+      <td><strong style="color:var(--sal)">${fmt(r[5])}</strong></td>
+      <td style="color:${saldo<=0?'var(--ing)':'var(--amber)'}">${fmt(saldo)}</td>
+      <td style="font-size:12px;max-width:180px;white-space:normal">${r[7]||''}</td>
+    </tr>`;
+  }).join('') +
+  `<tr class="tr-total">
+    <td colspan="5">Total abonado</td>
+    <td>${fmt(totalAbonado)}</td>
+    <td colspan="2"></td>
+  </tr>`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(!['admin','visor'].includes(localStorage.getItem('nk2_role')))location.replace('login.html?next='+encodeURIComponent(location.href));</script>
+<script src="session-timeout.js"></script>
+<title>Informe General — NK2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --ing: #1a5c2a; --ing-light: #e8f5ec;
+    --sal: #7a1a1a; --sal-light: #faeaea;
+    --bg: #f4f3f0; --card: #fff; --border: #dddbd6;
+    --text: #1a1a18; --muted: #6b6b66;
+    --amber: #854f0b; --radius: 6px;
+    --azul: #44729c; --azul-hdr: #2c5f8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  .site-header { background: var(--text); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .site-header h1 { font-size: 13px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a { font-size: 12px; color: #aaa; text-decoration: none; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a:hover { color: #fff; }
+
+  .container { max-width: 780px; margin: 0 auto; padding: 24px 16px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+  .card-header { padding: 12px 18px; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); background: #fafaf8; color: var(--muted); }
+  .card-body { padding: 18px; }
+
+  .row { display: grid; gap: 12px; margin-bottom: 14px; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; }
+  label { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; font-family: 'IBM Plex Mono', monospace; }
+  input { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; color: var(--text); font-family: 'IBM Plex Sans', sans-serif; outline: none; }
+  input:focus { border-color: #999; }
+  input[readonly] { background: #fafaf8; color: var(--muted); }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  .btn { padding: 9px 20px; font-size: 13px; font-weight: 500; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+  .btn-pdf { background: #c0392b; color: #fff; border-color: #c0392b; }
+  .btn-print { background: #2980b9; color: #fff; border-color: #2980b9; }
+
+  /* ═══════════════════════════════════════
+     INFORME — estilo documento formal
+  ═══════════════════════════════════════ */
+  #informe-wrap { display: none; }
+
+  .informe-doc {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 40px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .inf-titulo {
+    text-align: center;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .inf-subtitulo {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    letter-spacing: .5px;
+  }
+
+  /* Tabla período */
+  .inf-periodo {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+  }
+  .inf-periodo th {
+    background: #bed3ee;
+    border: 1px solid #a0b8d8;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .inf-periodo td {
+    border: 1px solid #a0b8d8;
+    padding: 6px 12px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* Párrafo descriptivo */
+  .inf-parrafo {
+    font-size: 11px;
+    font-style: italic;
+    text-align: justify;
+    color: #444;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #fafaf8;
+  }
+
+  /* Secciones del informe */
+  .inf-seccion {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  .inf-seccion .hdr-seccion td {
+    background: var(--azul-hdr);
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    letter-spacing: .5px;
+    border: 1px solid var(--azul-hdr);
+  }
+  .inf-seccion .hdr-col td {
+    background: #bed3ee;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border: 1px solid #a0b8d8;
+    text-align: center;
+  }
+  .inf-seccion .fila-dato td {
+    padding: 5px 12px;
+    border: 1px solid #d0d0d0;
+    font-size: 12px;
+  }
+  .inf-seccion .fila-dato td:last-child {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .inf-seccion .fila-total td {
+    padding: 6px 12px;
+    border: 1px solid #a0b8d8;
+    font-weight: 700;
+    font-size: 12px;
+    background: #deeaf7;
+  }
+  .inf-seccion .fila-total td:last-child {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .inf-seccion .fila-saldo td {
+    padding: 7px 12px;
+    border: 1px solid #a0b8d8;
+    font-weight: 700;
+    font-size: 13px;
+    background: #deeaf7;
+  }
+  .inf-seccion .fila-saldo td:last-child {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+  }
+
+  /* Firmas */
+  .inf-firmas {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 20px;
+  }
+  .inf-firma {
+    text-align: center;
+    padding-top: 40px;
+    border-top: 1px solid #333;
+    font-size: 11px;
+    font-style: italic;
+    color: #c0550a;
+  }
+  .inf-firma-centro {
+    text-align: center;
+    padding-top: 40px;
+    border-top: 1px solid #333;
+    font-size: 11px;
+    font-style: italic;
+    color: #c0550a;
+    max-width: 260px;
+    margin: 0 auto 0 auto;
+  }
+
+  .inf-pie {
+    text-align: right;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .inf-nombre-comite {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 20px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  /* PRINT — una sola hoja Letter portrait */
+  @media print {
+    @page { size: Letter portrait; margin: 8mm; }
+
+    .site-header, .informes-nav, .controls-card { display: none !important; }
+    body { background: #fff; }
+    .container { padding: 0; max-width: 100%; }
+    #informe-wrap { display: block !important; }
+
+    .informe-doc {
+      border: none;
+      padding: 0;
+      font-size: 10px;
+      line-height: 1.3;
+    }
+
+    .inf-titulo    { font-size: 11px; margin-bottom: 2px; }
+    .inf-subtitulo { font-size: 10px; margin-bottom: 8px; }
+
+    .inf-periodo   { margin-bottom: 8px; }
+    .inf-periodo th,
+    .inf-periodo td { padding: 3px 8px; font-size: 10px; }
+
+    .inf-parrafo {
+      font-size: 9px;
+      line-height: 1.35;
+      padding: 4px 8px;
+      margin-bottom: 8px;
+    }
+
+    .inf-seccion                 { margin-bottom: 8px; }
+    .inf-seccion .hdr-seccion td { padding: 3px 8px; font-size: 10px; letter-spacing: 0; }
+    .inf-seccion .hdr-col td     { padding: 2px 8px; font-size: 9px; }
+    .inf-seccion .fila-dato td   { padding: 2px 8px; font-size: 9px; }
+    .inf-seccion .fila-total td  { padding: 3px 8px; font-size: 10px; }
+    .inf-seccion .fila-saldo td  { padding: 3px 8px; font-size: 10px; }
+
+    .inf-firmas       { margin-top: 14px; gap: 20px; margin-bottom: 8px; }
+    .inf-firma        { padding-top: 16px; font-size: 9px; }
+    .inf-firma-centro { padding-top: 16px; font-size: 9px; }
+
+    .inf-pie { font-size: 8px; margin-top: 6px; }
+  }
+
+  @media (max-width: 480px) {
+    .row-2, .row-3 { grid-template-columns: 1fr; }
+    .informe-doc { padding: 16px; }
+    .inf-firmas { grid-template-columns: 1fr; gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <h1>Informe General · NK2</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <a href="index.html" id="lnk-volver">← Volver a Formularios</a>
+    <button onclick="cerrarSesion()" style="background:#4a4a4a;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;">🔒 Salir</button>
+  </div>
+</div>
+
+<style>
+.informes-nav{background:#fff;border-bottom:1px solid #dddbd6;padding:0 16px;display:flex;gap:0;overflow-x:auto}
+.informes-nav a{padding:10px 14px;font-size:12px;font-weight:500;color:#6b6b66;text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap;font-family:'IBM Plex Sans',sans-serif;transition:color .15s}
+.informes-nav a:hover{color:#1a1a18}
+.informes-nav a.active{color:#1a5c2a;border-bottom-color:#1a5c2a;font-weight:600}
+</style>
+<nav class="informes-nav">
+  <a href="informe.html">📊 Informe Detallado</a>
+  <a href="morosos.html">⚠ Mora</a>
+  <a href="informe_mensual.html" class="active">📄 Informe General</a>
+  <a href="reporte_filtro.html">📋 Reporte por Fechas</a>
+</nav>
+
+<div class="container">
+
+  <!-- CONTROLES -->
+  <div class="card controls-card">
+    <div class="card-header">Parámetros del informe</div>
+    <div class="card-body">
+      <div class="row row-2">
+        <div class="field">
+          <label>Fecha inicial</label>
+          <input type="date" id="fecha-ini">
+          <span class="hint">Primer día del período</span>
+        </div>
+        <div class="field">
+          <label>Fecha final</label>
+          <input type="date" id="fecha-fin">
+          <span class="hint">Último día del período</span>
+        </div>
+      </div>
+      <div class="row row-2">
+        <div class="field">
+          <label>Base inicial al 31-dic-2025</label>
+          <input type="text" id="saldo-base" readonly value="$ 3.637.452,26">
+        </div>
+        <div class="field">
+          <label>Saldo anterior (calculado)</label>
+          <input type="text" id="saldo-anterior" readonly placeholder="Se calcula automáticamente">
+          <span class="hint">Ingresos - Gastos antes del período</span>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generarInforme()">Generar informe</button>
+        <button class="btn btn-print" onclick="window.print()">🖨 Imprimir</button>
+        <button class="btn btn-pdf" onclick="exportarPDF()">↓ PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFORME -->
+  <div id="informe-wrap">
+    <div class="informe-doc" id="informe-doc">
+
+      <div class="inf-titulo">COMITÉ DE ORNATO Y SEGURIDAD NUEVO KENNEDY 2do SECTOR</div>
+      <div class="inf-subtitulo">INFORME FINANCIERO, PERÍODO:</div>
+      <table class="inf-periodo">
+        <tr>
+          <th>Fecha Inicial</th>
+          <th>Fecha Final</th>
+        </tr>
+        <tr>
+          <td id="lbl-fecha-ini">—</td>
+          <td id="lbl-fecha-fin">—</td>
+        </tr>
+      </table>
+
+      <div class="inf-parrafo">
+        Durante el periodo se registraron ingresos por aportes contributivos, de administración
+        y vehículos destinados al sostenimiento del Conjunto Nuevo Kennedy 2do Sector.
+        Los gastos correspondieron a servicios de seguridad, mantenimiento y gastos administrativos
+        necesarios para el funcionamiento del Comité de Ornato y Seguridad.
+      </div>
+
+      <!-- RESUMEN -->
+      <table class="inf-seccion">
+        <tr class="hdr-seccion"><td colspan="2">RESUMEN FINANCIERO</td></tr>
+        <tr class="hdr-col"><td>CONCEPTO</td><td>VALOR</td></tr>
+        <tr class="fila-dato"><td>Saldo anterior / Base inicial:</td><td id="r-saldo-ant">$ 0</td></tr>
+        <tr class="fila-dato"><td>Total aportes del período:</td><td id="r-tot-ing">$ 0</td></tr>
+        <tr class="fila-dato"><td>Total gastos del período:</td><td id="r-tot-gas">$ 0</td></tr>
+        <tr class="fila-saldo"><td>SALDO ACTUAL:</td><td id="r-saldo-act">$ 0</td></tr>
+      </table>
+
+      <!-- INGRESOS -->
+      <table class="inf-seccion">
+        <tr class="hdr-seccion"><td colspan="2">DETALLE DE INGRESOS</td></tr>
+        <tr class="hdr-col"><td>CONCEPTO</td><td>VALOR</td></tr>
+        <tr class="fila-dato"><td>Aportes donaciones rejas / Otros…</td><td id="i-contrib">$ 0</td></tr>
+        <tr class="fila-dato"><td>Aporte solo unidad residencial</td><td id="i-admon">$ 0</td></tr>
+        <tr class="fila-dato"><td>Aporte unidad residencial y vehículos</td><td id="i-ambos">$ 0</td></tr>
+        <tr class="fila-dato"><td>Recaudos por vehículos</td><td id="i-veh">$ 0</td></tr>
+        <tr class="fila-total"><td>TOTAL INGRESOS:</td><td id="i-total">$ 0</td></tr>
+      </table>
+
+      <!-- EGRESOS -->
+      <table class="inf-seccion">
+        <tr class="hdr-seccion"><td colspan="2">DETALLE DE GASTOS</td></tr>
+        <tr class="hdr-col"><td>CONCEPTO</td><td>VALOR</td></tr>
+        <tr class="fila-dato"><td>Seguridad y vigilancia</td><td id="g-seg">$ 0</td></tr>
+        <tr class="fila-dato"><td>Cafetería / Papelería / Aseo… Otros</td><td id="g-adm">$ 0</td></tr>
+        <tr class="fila-dato"><td>Servicios públicos / Recarga celular garita</td><td id="g-ser">$ 0</td></tr>
+        <tr class="fila-dato"><td>Mantenimiento Gral. / Áreas comunes</td><td id="g-mant">$ 0</td></tr>
+        <tr class="fila-dato"><td>Reconocimiento gestión administrativa</td><td id="g-otros">$ 0</td></tr>
+        <tr class="fila-total"><td>TOTAL GASTOS:</td><td id="g-total">$ 0</td></tr>
+      </table>
+
+      <!-- FIRMAS -->
+      <div class="inf-firmas">
+        <div class="inf-firma">Representante Principal</div>
+        <div class="inf-firma">Revisor</div>
+      </div>
+      <div class="inf-firma-centro">Fiscalizador</div>
+
+      <div class="inf-pie" id="lbl-fecha-impresion"></div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+localStorage.setItem('nk2_api_url', API_URL);
+function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
+if (localStorage.getItem('nk2_role') === 'visor') {
+  const lnk = document.getElementById('lnk-volver');
+  if (lnk) { lnk.href = 'informe.html'; lnk.textContent = '← Inicio'; }
+}
+
+const BASE_INICIAL = 3637452.26;
+
+// Fechas por defecto: mes actual
+const hoy = new Date();
+const pad = n => String(n).padStart(2,'0');
+const primerDia = `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}-01`;
+const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth()+1, 0);
+const ultimoDiaStr = `${ultimoDia.getFullYear()}-${pad(ultimoDia.getMonth()+1)}-${pad(ultimoDia.getDate())}`;
+document.getElementById('fecha-ini').value = primerDia;
+document.getElementById('fecha-fin').value = ultimoDiaStr;
+
+function apiFetch(action, params={}) {
+  return fetch(API_URL+'?'+new URLSearchParams({action,...params})).then(r=>r.json());
+}
+
+const fmt = n => '$ ' + Math.round(parseFloat(n)||0).toLocaleString('es-CO');
+const fmtFechaLarga = s => {
+  if(!s) return '—';
+  const d = new Date(s+'T12:00:00');
+  return d.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});
+};
+
+async function generarInforme() {
+  const fIni = document.getElementById('fecha-ini').value;
+  const fFin = document.getElementById('fecha-fin').value;
+
+  if (!fIni || !fFin) { alert('Por favor selecciona las dos fechas.'); return; }
+  if (fIni > fFin) { alert('La fecha inicial debe ser menor o igual a la final.'); return; }
+
+  const [ing, sal, abonos] = await Promise.all([
+    apiFetch('getIngresos'),
+    apiFetch('getSalidas'),
+    apiFetch('getAbonos', {})
+  ]);
+
+  const datosIng  = Array.isArray(ing)    ? ing    : [];
+  const datosSal  = Array.isArray(sal)    ? sal    : [];
+  const datosAbo  = Array.isArray(abonos) ? abonos : [];
+
+  // ── Saldo anterior: todo lo anterior a fIni ──────────────────────────
+  const ingAntes = datosIng.filter(r => r[1] < fIni)
+    .reduce((s,r) => s + (parseFloat(r[12])||0), 0);
+  const salAntes = datosSal.filter(r => r[1] < fIni)
+    .reduce((s,r) => s + (parseFloat(r[8])||0), 0);
+  const saldoAnterior = BASE_INICIAL + ingAntes - salAntes;
+  document.getElementById('saldo-anterior').value = fmt(saldoAnterior);
+
+  // ── INGRESOS del período ─────────────────────────────────────────────
+  const ingPer = datosIng.filter(r => r[1] >= fIni && r[1] <= fFin);
+
+  let iContrib = 0, iAdmon = 0, iAmbos = 0, iVeh = 0;
+
+  ingPer.forEach(r => {
+    const cod = String(r[6]).trim();
+    const val = parseFloat(r[12])||0;
+    if (['19','20'].includes(cod))              iContrib += val;
+    else if (cod === '11')                      iAdmon   += val;
+    else if (cod === '13')                      iAmbos   += val;
+    else if (['12','14','15','16','17','18'].includes(cod)) iVeh += val;
+  });
+
+  const totIng = iContrib + iAdmon + iAmbos + iVeh;
+
+  // ── GASTOS del período (columna SALDO = r[8]) ────────────────────────
+  const salPer = datosSal.filter(r => r[1] >= fIni && r[1] <= fFin);
+
+  let gSeg = 0, gAdm = 0, gSer = 0, gMant = 0, gOtros = 0;
+
+  salPer.forEach(r => {
+    const cod = String(r[4]).trim();
+    const val = parseFloat(r[8])||0;
+    if (val <= 0) return;
+    if (cod === '21')                        gSeg   += val;
+    else if (['22','23','24','25'].includes(cod)) gAdm += val;
+    else if (['27','28'].includes(cod))      gSer   += val;
+    else if (cod === '26')                   gMant  += val;
+    else if (cod === '29')                   gOtros += val;
+  });
+
+  // ── ABONOS del período ───────────────────────────────────────────────
+  const aboPer = datosAbo.filter(r => r[1] >= fIni && r[1] <= fFin);
+
+  aboPer.forEach(r => {
+    const cod = String(r[4]).trim();
+    const val = parseFloat(r[5])||0;
+    if (val <= 0) return;
+    if (cod === '21')                        gSeg   += val;
+    else if (['22','23','24','25'].includes(cod)) gAdm += val;
+    else if (['27','28'].includes(cod))      gSer   += val;
+    else if (cod === '26')                   gMant  += val;
+    else if (cod === '29')                   gOtros += val;
+  });
+
+  const totGas = gSeg + gAdm + gSer + gMant + gOtros;
+  const saldoAct = saldoAnterior + totIng - totGas;
+
+  // ── Renderizar ───────────────────────────────────────────────────────
+  document.getElementById('lbl-fecha-ini').textContent = fmtFechaLarga(fIni);
+  document.getElementById('lbl-fecha-fin').textContent = fmtFechaLarga(fFin);
+
+  document.getElementById('r-saldo-ant').textContent  = fmt(saldoAnterior);
+  document.getElementById('r-tot-ing').textContent    = fmt(totIng);
+  document.getElementById('r-tot-gas').textContent    = fmt(totGas);
+  document.getElementById('r-saldo-act').textContent  = fmt(saldoAct);
+
+  document.getElementById('i-contrib').textContent = fmt(iContrib);
+  document.getElementById('i-admon').textContent   = fmt(iAdmon);
+  document.getElementById('i-ambos').textContent   = fmt(iAmbos);
+  document.getElementById('i-veh').textContent     = fmt(iVeh);
+  document.getElementById('i-total').textContent   = fmt(totIng);
+
+  document.getElementById('g-seg').textContent     = fmt(gSeg);
+  document.getElementById('g-adm').textContent     = fmt(gAdm);
+  document.getElementById('g-ser').textContent     = fmt(gSer);
+  document.getElementById('g-mant').textContent    = fmt(gMant);
+  document.getElementById('g-otros').textContent   = fmt(gOtros);
+  document.getElementById('g-total').textContent   = fmt(totGas);
+
+  document.getElementById('lbl-fecha-impresion').textContent =
+    'Fecha de impresión: ' + hoy.toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+
+  document.getElementById('informe-wrap').style.display = 'block';
+  document.getElementById('informe-wrap').scrollIntoView({behavior:'smooth'});
+}
+
+function exportarPDF() {
+  window.print();
+}
+</script>
+</body>
+</html>
