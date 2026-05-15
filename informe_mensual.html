@@ -103,7 +103,7 @@
 
   /* Párrafo descriptivo */
   .inf-parrafo {
-    font-size: 11px;
+    font-size: 12px;
     font-style: italic;
     text-align: justify;
     color: #444;
@@ -117,9 +117,45 @@
   /* Secciones del informe */
   .inf-seccion {
     width: 100%;
+    table-layout: fixed; /*Importante*/
     border-collapse: collapse;
     margin-bottom: 20px;
   }
+
+  /* Ancho fijo para las columnas en todas
+  las tablas de las secciones */
+  .inf-seccion col.col-concepto {
+    width: 75%;        /* se puede ajustar: 70% - 80% */
+  }   
+
+  .inf-seccion col.col-valor {
+    width: 25%;       /* Complemento para total 100% */
+  }
+
+  /* Alineación del texto en la columna valor */
+  .inf-seccion td.col-valor,
+  .inf-seccion th.col-concepto {
+    text-align: left;
+  }
+
+  .firmas-contenedor {
+    margin-top: 80px;     /* Más espacio arriba */
+    padding-top: 30px;    /* Separación interna */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;            /* Más separación entre firmas */
+    min-height: 140px;    /* Altura mínima para firmas */
+  }
+
+  .firma-item {
+    text-align: center;
+  }
+
+  .firma-linea {
+    border-top: 1px solid #333;
+    margin-bottom: 12px;
+  } 
+
   .inf-seccion .hdr-seccion td {
     background: var(--azul-hdr);
     color: #fff;
@@ -127,13 +163,13 @@
     font-size: 12px;
     text-transform: uppercase;
     padding: 7px 12px;
-    letter-spacing: .5px;
+    letter-spacing: 1px;
     border: 1px solid var(--azul-hdr);
   }
   .inf-seccion .hdr-col td {
     background: #bed3ee;
     font-weight: 600;
-    font-size: 11px;
+    font-size: 12px;
     text-transform: uppercase;
     padding: 5px 12px;
     border: 1px solid #a0b8d8;
@@ -163,7 +199,7 @@
     padding: 7px 12px;
     border: 1px solid #a0b8d8;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 12px;
     background: #deeaf7;
   }
   .inf-seccion .fila-saldo td:last-child {
@@ -174,11 +210,11 @@
 
   /* Firmas */
   .inf-firmas {
-    margin-top: 40px;
+    margin-top: 20px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 40px;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
   }
   .inf-firma {
     text-align: center;
@@ -195,7 +231,7 @@
     font-size: 11px;
     font-style: italic;
     color: #c0550a;
-    max-width: 260px;
+    max-width: 240px;
     margin: 0 auto 0 auto;
   }
 
@@ -218,7 +254,7 @@
 
   /* PRINT — una sola hoja Letter portrait */
   @media print {
-    @page { size: Letter portrait; margin: 8mm; }
+    @page { size: Letter portrait; margin: 10mm 12mm; }
 
     .site-header, .informes-nav, .controls-card { display: none !important; }
     body { background: #fff; }
@@ -228,36 +264,38 @@
     .informe-doc {
       border: none;
       padding: 0;
-      font-size: 10px;
-      line-height: 1.3;
+      font-size: 12px;
+      line-height: 1.8;
     }
 
-    .inf-titulo    { font-size: 11px; margin-bottom: 2px; }
-    .inf-subtitulo { font-size: 10px; margin-bottom: 8px; }
+    .inf-titulo    { font-size: 13px; margin-bottom: 2px; }
+    .inf-subtitulo { font-size: 12px; margin-bottom: 6px; }
 
     .inf-periodo   { margin-bottom: 8px; }
     .inf-periodo th,
-    .inf-periodo td { padding: 3px 8px; font-size: 10px; }
+    .inf-periodo td { padding: 3px 10px; font-size: 12px; }
 
     .inf-parrafo {
-      font-size: 9px;
+      font-size: 12px;
       line-height: 1.35;
-      padding: 4px 8px;
+      padding: 5px 10px;
       margin-bottom: 8px;
     }
 
-    .inf-seccion                 { margin-bottom: 8px; }
-    .inf-seccion .hdr-seccion td { padding: 3px 8px; font-size: 10px; letter-spacing: 0; }
-    .inf-seccion .hdr-col td     { padding: 2px 8px; font-size: 9px; }
-    .inf-seccion .fila-dato td   { padding: 2px 8px; font-size: 9px; }
-    .inf-seccion .fila-total td  { padding: 3px 8px; font-size: 10px; }
-    .inf-seccion .fila-saldo td  { padding: 3px 8px; font-size: 10px; }
+    .inf-seccion                 { margin-bottom: 7px; }
+    .inf-seccion .hdr-seccion td { padding: 4px 10px; font-size: 12px; letter-spacing: 0; }
+    .inf-seccion .hdr-col td     { padding: 3px 10px; font-size: 11px; }
+    .inf-seccion .fila-dato td   { padding: 3px 10px; font-size: 12px; }
+    .inf-seccion .fila-total td  { padding: 4px 10px; font-size: 12px; }
+    .inf-seccion .fila-saldo td  { padding: 4px 10px; font-size: 12px; }
 
-    .inf-firmas       { margin-top: 14px; gap: 20px; margin-bottom: 8px; }
-    .inf-firma        { padding-top: 16px; font-size: 9px; }
-    .inf-firma-centro { padding-top: 16px; font-size: 9px; }
+    .inf-firmas       { margin-top: 24px; gap: 24px; margin-bottom: 6px; }
+    .inf-firma        { padding-top: 20px; font-size: 9px; }
+    .inf-firma-centro { padding-top: 20px; font-size: 9px; }
 
     .inf-pie { font-size: 8px; margin-top: 6px; }
+
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 
   @media (max-width: 480px) {
@@ -353,6 +391,7 @@
 
       <!-- RESUMEN -->
       <table class="inf-seccion">
+        <colgroup><col class="col-concepto"><col class="col-valor"></colgroup>
         <tr class="hdr-seccion"><td colspan="2">RESUMEN FINANCIERO</td></tr>
         <tr class="hdr-col"><td>CONCEPTO</td><td>VALOR</td></tr>
         <tr class="fila-dato"><td>Saldo anterior / Base inicial:</td><td id="r-saldo-ant">$ 0</td></tr>
@@ -363,6 +402,7 @@
 
       <!-- INGRESOS -->
       <table class="inf-seccion">
+        <colgroup><col class="col-concepto"><col class="col-valor"></colgroup>
         <tr class="hdr-seccion"><td colspan="2">DETALLE DE INGRESOS</td></tr>
         <tr class="hdr-col"><td>CONCEPTO</td><td>VALOR</td></tr>
         <tr class="fila-dato"><td>Aportes donaciones rejas / Otros…</td><td id="i-contrib">$ 0</td></tr>
@@ -374,6 +414,7 @@
 
       <!-- EGRESOS -->
       <table class="inf-seccion">
+        <colgroup><col class="col-concepto"><col class="col-valor"></colgroup>
         <tr class="hdr-seccion"><td colspan="2">DETALLE DE GASTOS</td></tr>
         <tr class="hdr-col"><td>CONCEPTO</td><td>VALOR</td></tr>
         <tr class="fila-dato"><td>Seguridad y vigilancia</td><td id="g-seg">$ 0</td></tr>
@@ -385,9 +426,15 @@
       </table>
 
       <!-- FIRMAS -->
-      <div class="inf-firmas">
-        <div class="inf-firma">Representante Principal</div>
-        <div class="inf-firma">Revisor</div>
+      <div class="firmas-contenedor">
+        <div class="firma-item">
+          <div class="firma-linea"></div>
+          Representante Principal
+        </div>
+        <div class="firma-item">
+          <div class="firma-linea"></div>
+          Revisor
+        </div>
       </div>
       <div class="inf-firma-centro">Fiscalizador</div>
 
