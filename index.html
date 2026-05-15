@@ -1,14 +1,941 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>nk2app</title>
-    <script type="module" crossorigin src="/assets/index-CCSVKvcM.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DaK0Vin3.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(localStorage.getItem('nk2_role')!=='admin')location.replace('login.html?next='+encodeURIComponent(location.href));</script>
+<title>Recaudos NK2 — Comité Ornato y Seguridad</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ing: #1a5c2a;
+    --ing-light: #e8f5ec;
+    --sal: #7a1a1a;
+    --sal-light: #faeaea;
+    --bg: #f4f3f0;
+    --card: #ffffff;
+    --border: #dddbd6;
+    --text: #1a1a18;
+    --muted: #6b6b66;
+    --err: #c0392b;
+    --err-bg: #fdf3f2;
+    --amber: #854f0b;
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  .site-header {
+    background: var(--text);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .site-header h1 {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .site-header span {
+    font-size: 11px;
+    color: #999;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .btn-consultas {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: #2d6a4f;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    text-decoration: none;
+    transition: opacity .15s;
+  }
+  .btn-consultas:hover { opacity: .85; }
+
+  /* TABS */
+  .tab-bar {
+    display: flex;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .tab-btn {
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all .2s;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .tab-btn.active-ing { color: var(--ing); border-bottom-color: var(--ing); }
+  .tab-btn.active-sal { color: var(--sal); border-bottom-color: var(--sal); }
+
+  /* LAYOUT */
+  .container { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 12px 18px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .card-header.ing { background: var(--ing); color: #fff; }
+  .card-header.sal { background: var(--sal); color: #fff; }
+  .card-body { padding: 18px; }
+
+  /* TOAST */
+  .toast {
+    display: none;
+    background: var(--err-bg);
+    border: 1px solid #f5c6c6;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--err);
+  }
+  .toast.show { display: block; }
+  .toast strong { display: block; margin-bottom: 6px; }
+  .toast ul { padding-left: 18px; }
+  .toast ul li { margin: 3px 0; }
+
+  /* FORM GRID */
+  .row { display: grid; gap: 12px; margin-bottom: 14px; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: border-color .15s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #999; }
+  input.auto { background: #fafaf8; color: var(--muted); }
+  input.auto:focus { background: #fff; color: var(--text); }
+  input.err, select.err, textarea.err {
+    border-color: var(--err);
+    background: var(--err-bg);
+  }
+  input:disabled, select:disabled {
+    background: #f0ede8;
+    color: #aaa;
+    cursor: not-allowed;
+  }
+  input[readonly] { background: #fafaf8; }
+  textarea { resize: none; height: 60px; }
+  .err-msg { font-size: 11px; color: var(--err); margin-top: 4px; min-height: 14px; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* TOTALES */
+  .totales {
+    background: #fafaf8;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin: 16px 0;
+  }
+  .tot-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+  .tot-row.main {
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+  }
+  .tot-lbl { color: var(--muted); font-size: 12px; }
+  .tot-val { font-weight: 500; font-family: 'IBM Plex Mono', monospace; }
+  .tot-val.green { color: var(--ing); }
+  .tot-val.red { color: var(--sal); }
+  .tot-val.amber { color: var(--amber); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+  /* BUTTONS */
+  .btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .btn {
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn:active { opacity: .7; transform: scale(.98); }
+  .btn-ing { background: var(--ing); color: #fff; border-color: var(--ing); }
+  .btn-sal { background: var(--sal); color: #fff; border-color: var(--sal); }
+  .btn-sec { background: #fff; color: var(--text); }
+  .btn-cancel { background: #4a4a4a; color: #fff; border-color: #4a4a4a; }
+
+  /* SPINNER */
+  .spinner {
+    display: none;
+    width: 16px; height: 16px;
+    border: 2px solid #ccc;
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    margin: 0 auto;
+  }
+  .btn.loading .btn-txt { display: none; }
+  .btn.loading .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SUCCESS BANNER */
+  .success-banner {
+    display: none;
+    background: #e8f5ec;
+    border: 1px solid #a8d5b5;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--ing);
+    font-weight: 500;
+  }
+  .success-banner.show { display: block; }
+
+  /* API CONFIG */
+  .api-config {
+    background: #fffbea;
+    border: 1px solid #f0d070;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .api-config strong { display: block; margin-bottom: 6px; color: var(--amber); font-size: 12px; letter-spacing: .5px; }
+  .api-config input { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .api-config button {
+    margin-top: 8px;
+    padding: 7px 14px;
+    background: var(--amber);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  @media (max-width: 480px) {
+    .row-2, .row-3 { grid-template-columns: 1fr; }
+    .btns { grid-template-columns: 1fr 1fr; }
+    .site-header span { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <h1>Comité Ornato y Seguridad · NK2</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span id="hdr-fecha"></span>
+    <a href="consulta.html" class="btn-consultas">🔍 Consultas</a>
+    <a href="informe.html" class="btn-consultas" style="background:#2c3e7a">📊 Informe detallado</a>
+    <a href="morosos.html" class="btn-consultas" style="background:#7a1a1a">⚠ Mora</a>
+    <a href="abonos.html" class="btn-consultas" style="background:#854f0b">💲 Abonos</a>
+    <a href="informe_mensual.html" class="btn-consultas" style="background:#2c5f8a">📄 Informe general</a>
+    <a href="reporte_filtro.html" class="btn-consultas" style="background:#5b3a8a">📋 Reporte por fechas</a>
+    <button onclick="cerrarSesion()" style="background:#4a4a4a;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;">🔒 Salir</button>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active-ing" id="tab-ing" onclick="switchTab('ing')">Registro de Ingreso</button>
+  <button class="tab-btn" id="tab-sal" onclick="switchTab('sal')">Registro de Salida</button>
+  <a href="consulta.html" class="tab-btn" style="text-decoration:none;margin-left:auto">🔍 Consultar registros</a>
+</div>
+
+<div class="container">
+
+  <!-- API CONFIG -->
+  <div class="api-config" id="api-config-box">
+    <strong>⚙ CONFIGURACIÓN — URL DE LA API</strong>
+    Pega aquí la URL de tu Apps Script y haz clic en Conectar. Solo se hace una vez.
+    <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/.../exec">
+    <button onclick="conectarAPI()">Conectar y cargar datos</button>
+  </div>
+
+  <!-- ══════════ PANEL INGRESOS ══════════ -->
+  <div class="panel active" id="panel-ing">
+    <div class="card">
+      <div class="card-header ing">Registro de Ingreso — Nuevo Kennedy II Sector</div>
+      <div class="card-body">
+
+        <div id="toast-ing" class="toast"></div>
+        <div id="success-ing" class="success-banner"></div>
+
+        <div class="row row-2">
+          <div class="field">
+            <label>Fecha *</label>
+            <input type="date" id="i-fecha" class="auto">
+            <span class="hint">Editable — carga con la fecha de hoy</span>
+            <span class="err-msg" id="e-i-fecha"></span>
+          </div>
+          <div class="field">
+            <label>N° Recibo *</label>
+            <input type="number" id="i-recibo" class="auto" min="1">
+            <span class="hint">Editable — ajusta si es retroactivo</span>
+            <span class="err-msg" id="e-i-recibo"></span>
+          </div>
+        </div>
+
+        <div class="row row-2">
+          <div class="field">
+            <label>Interior *</label>
+            <select id="i-interior" onchange="iAutoNombre()">
+              <option value="">-- seleccionar --</option>
+            </select>
+            <span class="err-msg" id="e-i-interior"></span>
+          </div>
+          <div class="field">
+            <label>Nombre</label>
+            <input type="text" id="i-nombre" readonly placeholder="Autocompleta...">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Administrador *</label>
+            <select id="i-admin">
+              <option value="">-- seleccionar --</option>
+            </select>
+            <span class="err-msg" id="e-i-admin"></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Concepto *</label>
+            <select id="i-concepto" onchange="iAplicarConcepto()">
+              <option value="">-- seleccionar --</option>
+              <option value="11">11 — Conserjería (casa)</option>
+              <option value="12">12 — Conserjería (vehículo)</option>
+              <option value="13">13 — Conserjería casa y vehículo(s)</option>
+              <option value="14">14 — Conserjería segundo vehículo</option>
+              <option value="15">15 — Conserjería vehículo externo</option>
+              <option value="16">16 — Conserjería parqueadero externo (hrs)</option>
+              <option value="17">17 — Conserjería parqueadero moto</option>
+              <option value="18">18 — Conserjería moto externa</option>
+              <option value="19">19 — Otros…</option>
+              <option value="20">20 — Aporte contributivo</option>
+            </select>
+            <span class="err-msg" id="e-i-concepto"></span>
+          </div>
+        </div>
+
+        <div class="row row-2">
+          <div class="field">
+            <label>Valor Admón ($) *</label>
+            <input type="number" id="i-admon" min="0" value="0" oninput="iCalcTotal()">
+            <span class="err-msg" id="e-i-admon"></span>
+          </div>
+          <div class="field">
+            <label>Vehículo(s) ($) *</label>
+            <input type="number" id="i-vehiculo" min="0" value="0" oninput="iCalcTotal()">
+            <span class="err-msg" id="e-i-vehiculo"></span>
+          </div>
+        </div>
+
+        <div class="row row-2">
+          <div class="field">
+            <label>Mes de pago *</label>
+            <select id="i-mes"></select>
+            <span class="err-msg" id="e-i-mes"></span>
+          </div>
+          <div class="field">
+            <label>Cantidad meses *</label>
+            <input type="number" id="i-cantidad" min="1" value="1" oninput="iCalcTotal()">
+            <span class="err-msg" id="e-i-cantidad"></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Observación *</label>
+            <textarea id="i-obs" placeholder="Ej: Placa EBR621, saldo pendiente..."></textarea>
+            <span class="err-msg" id="e-i-obs"></span>
+          </div>
+        </div>
+
+        <div class="totales">
+          <div class="tot-row main">
+            <span>Total a pagar</span>
+            <span class="tot-val green" id="i-total">$ 0</span>
+          </div>
+          <div class="tot-row">
+            <span class="tot-lbl">Base Ingr. al 31 dic/25</span>
+            <span class="tot-val" id="i-base">Cargando...</span>
+          </div>
+          <div class="tot-row">
+            <span class="tot-lbl">Total ingresos</span>
+            <span class="tot-val" id="i-tot-ing">Cargando...</span>
+          </div>
+          <div class="tot-row">
+            <span class="tot-lbl">Saldo en caja</span>
+            <span class="tot-val green" id="i-saldo">Cargando...</span>
+          </div>
+        </div>
+
+        <div class="btns">
+          <button class="btn btn-ing" id="btn-guardar-ing" onclick="iGuardar()">
+            <span class="btn-txt">Guardar</span>
+            <span class="spinner"></span>
+          </button>
+          <button class="btn btn-sec" onclick="iLimpiar()">Limpiar</button>
+          <button class="btn btn-cancel" onclick="iLimpiar()">Cancelar</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PANEL SALIDAS ══════════ -->
+  <div class="panel" id="panel-sal">
+    <div class="card">
+      <div class="card-header sal">Registro de Salida — Nuevo Kennedy II Sector</div>
+      <div class="card-body">
+
+        <div id="toast-sal" class="toast"></div>
+        <div id="success-sal" class="success-banner"></div>
+
+        <div class="row row-2">
+          <div class="field">
+            <label>Fecha *</label>
+            <input type="date" id="s-fecha" class="auto">
+            <span class="hint">Editable — carga con la fecha de hoy</span>
+            <span class="err-msg" id="e-s-fecha"></span>
+          </div>
+          <div class="field">
+            <label>N° Registro *</label>
+            <input type="text" id="s-cod" class="auto">
+            <span class="hint">Editable — ajusta si es retroactivo</span>
+            <span class="err-msg" id="e-s-cod"></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Administrador que autoriza *</label>
+            <select id="s-admin">
+              <option value="">-- seleccionar --</option>
+            </select>
+            <span class="err-msg" id="e-s-admin"></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Concepto de egreso *</label>
+            <select id="s-concepto">
+              <option value="">-- seleccionar --</option>
+              <option value="21">21 — Servicio de vigilancia</option>
+              <option value="22">22 — Insumos cafetería</option>
+              <option value="23">23 — Insumos aseo</option>
+              <option value="24">24 — Insumo papelería</option>
+              <option value="25">25 — Otros…</option>
+              <option value="26">26 — Mantenimiento Gral. Gral./Áreas comunes</option>
+              <option value="27">27 — Servicios públicos</option>
+              <option value="28">28 — Servicio Internet/Recarga celular Garita</option>
+              <option value="29">29 — Reconocimiento gestión administrativa</option>
+            </select>
+            <span class="err-msg" id="e-s-concepto"></span>
+          </div>
+        </div>
+
+        <div class="row row-2">
+          <div class="field">
+            <label>Valor total ($) *</label>
+            <input type="number" id="s-total" min="0" value="0" oninput="sCalcSaldo()">
+            <span class="err-msg" id="e-s-total"></span>
+          </div>
+          <div class="field">
+            <label>Abono ($)</label>
+            <input type="number" id="s-abono" min="0" value="0" oninput="sCalcSaldo()">
+            <span class="hint">Dejar en 0 si es pago total</span>
+            <span class="err-msg" id="e-s-abono"></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Observación / Descripción del gasto *</label>
+            <textarea id="s-obs" placeholder="Ej: Servicio de vigilancia 1ra quincena..."></textarea>
+            <span class="err-msg" id="e-s-obs"></span>
+          </div>
+        </div>
+
+        <div class="totales">
+          <div class="tot-row main">
+            <span>Valor total salida</span>
+            <span class="tot-val red" id="s-disp-total">$ 0</span>
+          </div>
+          <div class="tot-row">
+            <span class="tot-lbl">Abono registrado</span>
+            <span class="tot-val amber" id="s-disp-abono">$ 0</span>
+          </div>
+          <div class="tot-row">
+            <span class="tot-lbl">Saldo pendiente</span>
+            <span class="tot-val" id="s-disp-saldo">$ 0</span>
+          </div>
+          <hr class="divider">
+          <div class="tot-row">
+            <span class="tot-lbl">Total salidas acumuladas</span>
+            <span class="tot-val red" id="s-tot-sal">Cargando...</span>
+          </div>
+          <div class="tot-row">
+            <span class="tot-lbl">Total ingresos</span>
+            <span class="tot-val" id="s-tot-ing">Cargando...</span>
+          </div>
+          <div class="tot-row">
+            <span class="tot-lbl">Saldo en caja</span>
+            <span class="tot-val green" id="s-saldo">Cargando...</span>
+          </div>
+        </div>
+
+        <div class="btns">
+          <button class="btn btn-sal" id="btn-guardar-sal" onclick="sGuardar()">
+            <span class="btn-txt">Guardar</span>
+            <span class="spinner"></span>
+          </button>
+          <button class="btn btn-sec" onclick="sLimpiar()">Limpiar</button>
+          <button class="btn btn-cancel" onclick="sLimpiar()">Cancelar</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════
+// CONFIGURACIÓN
+// ═══════════════════════════════════════
+let API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+localStorage.setItem('nk2_api_url', API_URL);
+function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
+let habitantes = [];
+let personal = [];
+
+if (API_URL) {
+  document.getElementById('api-url-input').value = API_URL;
+  document.getElementById('api-config-box').style.display = 'none';
+  cargarDatos();
+}
+
+function conectarAPI() {
+  const url = document.getElementById('api-url-input').value.trim();
+  if (!url || !url.includes('script.google.com')) {
+    alert('Por favor pega una URL válida de Apps Script.');
+    return;
+  }
+  API_URL = url;
+  localStorage.setItem('nk2_api_url', API_URL);
+  document.getElementById('api-config-box').style.display = 'none';
+  cargarDatos();
+}
+
+// ═══════════════════════════════════════
+// CARGA DE DATOS DESDE GOOGLE SHEETS
+// ═══════════════════════════════════════
+async function cargarDatos() {
+  try {
+    const [hab, per, recibo, registro, totales] = await Promise.all([
+      apiFetch('getHabitantes'),
+      apiFetch('getPersonal'),
+      apiFetch('getNextRecibo'),
+      apiFetch('getNextRegistro'),
+      apiFetch('getTotales')
+    ]);
+
+    habitantes = hab;
+    personal = per;
+
+    poblarHabitantes(hab);
+    poblarPersonal(per);
+
+    document.getElementById('i-recibo').value = recibo.next;
+    document.getElementById('s-cod').value = registro.next;
+
+    if (totales) actualizarTotales(totales);
+
+  } catch(e) {
+    console.error('Error cargando datos:', e);
+  }
+}
+
+function apiFetch(action, params = {}) {
+  const qs = new URLSearchParams({ action, ...params });
+  return fetch(API_URL + '?' + qs).then(r => r.json());
+}
+
+function poblarHabitantes(list) {
+  const sel = document.getElementById('i-interior');
+  sel.innerHTML = '<option value="">-- seleccionar --</option>';
+  list.forEach(h => {
+    const o = document.createElement('option');
+    o.value = h.int;
+    o.dataset.nombre = h.nombre;
+    o.textContent = h.int + ' — ' + h.nombre;
+    sel.appendChild(o);
+  });
+}
+
+function poblarPersonal(list) {
+  ['i-admin','s-admin'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">-- seleccionar --</option>';
+    list.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id;
+      o.dataset.nombre = p.nombre;
+      o.textContent = p.nombre + ' — ' + p.cargo;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function actualizarTotales(t) {
+  const fmt = n => '$ ' + Math.round(n).toLocaleString('es-CO');
+  document.getElementById('i-base').textContent = fmt(t.base);
+  document.getElementById('i-tot-ing').textContent = fmt(t.totalIngresos);
+  document.getElementById('i-saldo').textContent = fmt(t.saldo);
+  document.getElementById('s-tot-sal').textContent = fmt(t.totalSalidas);
+  document.getElementById('s-tot-ing').textContent = fmt(t.totalIngresos);
+  document.getElementById('s-saldo').textContent = fmt(t.saldo);
+}
+
+// ═══════════════════════════════════════
+// FECHA Y MES
+// ═══════════════════════════════════════
+const hoy = new Date();
+const pad = n => String(n).padStart(2,'0');
+const fechaISO = hoy.getFullYear()+'-'+pad(hoy.getMonth()+1)+'-'+pad(hoy.getDate());
+document.getElementById('i-fecha').value = fechaISO;
+document.getElementById('s-fecha').value = fechaISO;
+document.getElementById('hdr-fecha').textContent = hoy.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const mesAct = meses[hoy.getMonth()]+'-'+hoy.getFullYear();
+const selMes = document.getElementById('i-mes');
+for(let y=2024;y<=2027;y++){
+  meses.forEach(m=>{
+    const o = document.createElement('option');
+    o.value = m+'-'+y; o.textContent = m+'-'+y;
+    if(o.value===mesAct) o.selected=true;
+    selMes.appendChild(o);
+  });
+}
+
+// ═══════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════
+function switchTab(t) {
+  document.getElementById('panel-ing').classList.toggle('active', t==='ing');
+  document.getElementById('panel-sal').classList.toggle('active', t==='sal');
+  document.getElementById('tab-ing').className = 'tab-btn'+(t==='ing'?' active-ing':'');
+  document.getElementById('tab-sal').className = 'tab-btn'+(t==='sal'?' active-sal':'');
+}
+
+// ═══════════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════════
+const fmt = n => '$ '+Math.round(n).toLocaleString('es-CO');
+
+function markErr(id, msg) {
+  const el = document.getElementById(id);
+  if(el) el.classList.add('err');
+  const em = document.getElementById('e-'+id);
+  if(em) em.textContent = msg;
+}
+function clearErr(id) {
+  const el = document.getElementById(id);
+  if(el) el.classList.remove('err');
+  const em = document.getElementById('e-'+id);
+  if(em) em.textContent = '';
+}
+function clearAllErr(prefix) {
+  document.querySelectorAll('[id^="'+prefix+'"]').forEach(el => {
+    if(el.classList) el.classList.remove('err');
+  });
+  document.querySelectorAll('[id^="e-'+prefix+'"]').forEach(el => el.textContent='');
+}
+function showToast(id, errores) {
+  const t = document.getElementById(id);
+  if(!errores.length){ t.classList.remove('show'); return; }
+  t.innerHTML = '<strong>Por favor completa los siguientes campos:</strong><ul>'
+    + errores.map(e=>'<li>'+e+'</li>').join('') + '</ul>';
+  t.classList.add('show');
+  t.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function showSuccess(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = '✓ ' + msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+function setLoading(btnId, loading) {
+  document.getElementById(btnId).classList.toggle('loading', loading);
+}
+
+// ═══════════════════════════════════════
+// INGRESOS
+// ═══════════════════════════════════════
+function iAutoNombre() {
+  const sel = document.getElementById('i-interior');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('i-nombre').value = opt ? (opt.dataset.nombre || '') : '';
+  clearErr('i-interior');
+}
+
+function iAplicarConcepto() {
+  const cod = parseInt(document.getElementById('i-concepto').value);
+  const admon = document.getElementById('i-admon');
+  const veh = document.getElementById('i-vehiculo');
+  clearErr('i-concepto');
+  if(cod===11||cod===19||cod===20){
+    admon.disabled=false; veh.disabled=true; veh.value=0;
+  } else if([12,14,15,16,17,18].includes(cod)){
+    admon.disabled=true; admon.value=0; veh.disabled=false;
+  } else if(cod===13){
+    admon.disabled=false; veh.disabled=false;
+  } else {
+    admon.disabled=false; veh.disabled=false;
+  }
+  iCalcTotal();
+}
+
+function iCalcTotal() {
+  const a = parseFloat(document.getElementById('i-admon').value)||0;
+  const v = parseFloat(document.getElementById('i-vehiculo').value)||0;
+  const c = parseInt(document.getElementById('i-cantidad').value)||1;
+  document.getElementById('i-total').textContent = fmt((a+v)*c);
+}
+
+async function iGuardar() {
+  clearAllErr('i-');
+  const errores = [];
+
+  if(!document.getElementById('i-fecha').value){ markErr('i-fecha','Campo requerido'); errores.push('Fecha'); }
+  const rec = document.getElementById('i-recibo').value;
+  if(!rec||parseInt(rec)<1){ markErr('i-recibo','Número válido requerido'); errores.push('N° Recibo'); }
+  if(!document.getElementById('i-interior').value){ markErr('i-interior','Campo requerido'); errores.push('Interior'); }
+  if(!document.getElementById('i-admin').value){ markErr('i-admin','Campo requerido'); errores.push('Administrador'); }
+  if(!document.getElementById('i-concepto').value){ markErr('i-concepto','Campo requerido'); errores.push('Concepto'); }
+
+  const a = parseFloat(document.getElementById('i-admon').value)||0;
+  const v = parseFloat(document.getElementById('i-vehiculo').value)||0;
+  const adDis = document.getElementById('i-admon').disabled;
+  const veDis = document.getElementById('i-vehiculo').disabled;
+  if((!adDis&&a<=0)&&(!veDis&&v<=0)){ markErr('i-admon','Al menos un valor mayor a cero'); errores.push('Valor Admón / Vehículo'); }
+
+  const c = parseInt(document.getElementById('i-cantidad').value)||0;
+  if(c<1){ markErr('i-cantidad','Mínimo 1'); errores.push('Cantidad de meses'); }
+  if(!document.getElementById('i-mes').value){ markErr('i-mes','Campo requerido'); errores.push('Mes de pago'); }
+  if(!document.getElementById('i-obs').value.trim()){ markErr('i-obs','Campo requerido'); errores.push('Observación'); }
+
+  showToast('toast-ing', errores);
+  if(errores.length) return;
+
+  const selAdmin = document.getElementById('i-admin');
+  const selConc = document.getElementById('i-concepto');
+  const datos = {
+    factura: rec,
+    fecha: document.getElementById('i-fecha').value,
+    interior: document.getElementById('i-interior').value,
+    nombre: document.getElementById('i-nombre').value,
+    cod_admin: selAdmin.value,
+    administrador: selAdmin.options[selAdmin.selectedIndex].dataset.nombre,
+    cod_concepto: selConc.value,
+    concepto: selConc.options[selConc.selectedIndex].text.split(' — ')[1],
+    vlr_admon: a,
+    vlr_vehiculo: v,
+    mes_pago: document.getElementById('i-mes').value,
+    cantidad: c,
+    total: (a+v)*c,
+    observacion: document.getElementById('i-obs').value.trim()
+  };
+
+  setLoading('btn-guardar-ing', true);
+  try {
+    const res = await apiFetch('saveIngreso', datos);
+    if(res.ok){
+      showSuccess('success-ing', res.mensaje);
+      document.getElementById('toast-ing').classList.remove('show');
+      iLimpiar();
+      cargarDatos();
+    } else {
+      alert('Error al guardar: ' + res.error);
+    }
+  } catch(e) {
+    alert('Error de conexión. Verifica tu URL de API.');
+  }
+  setLoading('btn-guardar-ing', false);
+}
+
+function iLimpiar() {
+  document.getElementById('i-fecha').value = fechaISO;
+  document.getElementById('i-interior').value = '';
+  document.getElementById('i-nombre').value = '';
+  document.getElementById('i-admin').value = '';
+  document.getElementById('i-concepto').value = '';
+  const admon = document.getElementById('i-admon');
+  const veh = document.getElementById('i-vehiculo');
+  admon.disabled=false; admon.value=0;
+  veh.disabled=false; veh.value=0;
+  document.getElementById('i-cantidad').value=1;
+  document.getElementById('i-obs').value='';
+  document.getElementById('i-total').textContent='$ 0';
+  document.getElementById('toast-ing').classList.remove('show');
+  clearAllErr('i-');
+  apiFetch('getNextRecibo').then(d => document.getElementById('i-recibo').value = d.next);
+}
+
+// ═══════════════════════════════════════
+// SALIDAS
+// ═══════════════════════════════════════
+function sCalcSaldo() {
+  const t = parseFloat(document.getElementById('s-total').value)||0;
+  const a = parseFloat(document.getElementById('s-abono').value)||0;
+  document.getElementById('s-disp-total').textContent = fmt(t);
+  document.getElementById('s-disp-abono').textContent = fmt(a);
+  const saldo = Math.max(0, t-a);
+  const el = document.getElementById('s-disp-saldo');
+  el.textContent = fmt(saldo);
+  el.className = 'tot-val '+(saldo>0?'amber':'green');
+}
+
+async function sGuardar() {
+  clearAllErr('s-');
+  const errores = [];
+
+  if(!document.getElementById('s-fecha').value){ markErr('s-fecha','Campo requerido'); errores.push('Fecha'); }
+  if(!document.getElementById('s-cod').value.trim()){ markErr('s-cod','Campo requerido'); errores.push('N° Registro'); }
+  if(!document.getElementById('s-admin').value){ markErr('s-admin','Campo requerido'); errores.push('Administrador que autoriza'); }
+  if(!document.getElementById('s-concepto').value){ markErr('s-concepto','Campo requerido'); errores.push('Concepto de egreso'); }
+
+  const t = parseFloat(document.getElementById('s-total').value)||0;
+  if(t<=0){ markErr('s-total','Debe ser mayor a cero'); errores.push('Valor total de la salida'); }
+
+  const ab = parseFloat(document.getElementById('s-abono').value)||0;
+  if(ab>t&&t>0){ markErr('s-abono','El abono no puede superar el valor total'); errores.push('Abono (supera el valor total)'); }
+
+  if(!document.getElementById('s-obs').value.trim()){ markErr('s-obs','Campo requerido'); errores.push('Observación / Descripción del gasto'); }
+
+  showToast('toast-sal', errores);
+  if(errores.length) return;
+
+  const selAdmin = document.getElementById('s-admin');
+  const selConc = document.getElementById('s-concepto');
+  const datos = {
+    cod_registro: document.getElementById('s-cod').value.trim(),
+    fecha: document.getElementById('s-fecha').value,
+    cod_admin: selAdmin.value,
+    administrador: selAdmin.options[selAdmin.selectedIndex].dataset.nombre,
+    cod_concepto: selConc.value,
+    concepto: selConc.options[selConc.selectedIndex].text.split(' — ')[1],
+    vlr_total: t,
+    abono: ab,
+    observacion: document.getElementById('s-obs').value.trim()
+  };
+
+  setLoading('btn-guardar-sal', true);
+  try {
+    const res = await apiFetch('saveSalida', datos);
+    if(res.ok){
+      showSuccess('success-sal', res.mensaje);
+      document.getElementById('toast-sal').classList.remove('show');
+      sLimpiar();
+      cargarDatos();
+    } else {
+      alert('Error al guardar: ' + res.error);
+    }
+  } catch(e) {
+    alert('Error de conexión. Verifica tu URL de API.');
+  }
+  setLoading('btn-guardar-sal', false);
+}
+
+function sLimpiar() {
+  document.getElementById('s-fecha').value = fechaISO;
+  document.getElementById('s-admin').value = '';
+  document.getElementById('s-concepto').value = '';
+  document.getElementById('s-total').value = 0;
+  document.getElementById('s-abono').value = 0;
+  document.getElementById('s-obs').value = '';
+  document.getElementById('s-disp-total').textContent = '$ 0';
+  document.getElementById('s-disp-abono').textContent = '$ 0';
+  document.getElementById('s-disp-saldo').textContent = '$ 0';
+  document.getElementById('s-disp-saldo').className = 'tot-val';
+  document.getElementById('toast-sal').classList.remove('show');
+  clearAllErr('s-');
+  apiFetch('getNextRegistro').then(d => document.getElementById('s-cod').value = d.next);
+}
+</script>
+</body>
 </html>
