@@ -149,12 +149,15 @@
 
   .firma-item {
     text-align: center;
+    font-size: 11px;
+    font-style: italic;
+    color: #c0550a;
   }
 
   .firma-linea {
     border-top: 1px solid #333;
     margin-bottom: 12px;
-  } 
+  }
 
   .inf-seccion .hdr-seccion td {
     background: var(--azul-hdr);
@@ -289,9 +292,10 @@
     .inf-seccion .fila-total td  { padding: 4px 10px; font-size: 12px; }
     .inf-seccion .fila-saldo td  { padding: 4px 10px; font-size: 12px; }
 
-    .inf-firmas       { margin-top: 24px; gap: 24px; margin-bottom: 6px; }
-    .inf-firma        { padding-top: 20px; font-size: 9px; }
-    .inf-firma-centro { padding-top: 20px; font-size: 9px; }
+    .firmas-contenedor { margin-top: 24px; gap: 24px; min-height: auto; }
+    .firma-item        { font-size: 9px; }
+    .firma-linea       { margin-bottom: 8px; }
+    .inf-firma-centro  { padding-top: 20px; font-size: 9px; }
 
     .inf-pie { font-size: 8px; margin-top: 6px; }
 
@@ -301,7 +305,7 @@
   @media (max-width: 480px) {
     .row-2, .row-3 { grid-template-columns: 1fr; }
     .informe-doc { padding: 16px; }
-    .inf-firmas { grid-template-columns: 1fr; gap: 20px; }
+    .firmas-contenedor { grid-template-columns: 1fr; gap: 20px; }
   }
 </style>
 </head>
