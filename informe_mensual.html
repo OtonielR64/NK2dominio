@@ -257,14 +257,49 @@
 
   /* PRINT — hoja Letter portrait */
   @media print {
-    @page { size: Letter portrait; margin: 10mm 12mm; }
+    @page { size: Letter portrait; margin: 12mm 15mm; }
 
     .site-header, .informes-nav, .controls-card { display: none !important; }
-    body { background: #fff; }
-    .container { padding: 0; max-width: 100%; }
-    #informe-wrap { display: block !important; }
 
-    .informe-doc { border: none; border-radius: 0; padding: 0; }
+    html, body { width: 100%; background: #fff; margin: 0; padding: 0; }
+
+    .container {
+      max-width: none;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #informe-wrap { display: block !important; width: 100%; }
+
+    .informe-doc {
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .inf-titulo    { font-size: 16px; margin-bottom: 4px; }
+    .inf-subtitulo { font-size: 14px; margin-bottom: 12px; }
+
+    .inf-periodo th,
+    .inf-periodo td { padding: 5px 14px; font-size: 13px; }
+
+    .inf-parrafo { font-size: 13px; padding: 8px 12px; margin-bottom: 14px; }
+
+    .inf-seccion { margin-bottom: 14px; }
+    .inf-seccion .hdr-seccion td { padding: 6px 14px; font-size: 13px; }
+    .inf-seccion .hdr-col td     { padding: 5px 14px; font-size: 13px; }
+    .inf-seccion .fila-dato td   { padding: 5px 14px; font-size: 13px; }
+    .inf-seccion .fila-total td  { padding: 6px 14px; font-size: 13px; }
+    .inf-seccion .fila-saldo td  { padding: 7px 14px; font-size: 14px; }
+
+    .firmas-contenedor { margin-top: 50px; gap: 50px; min-height: 120px; }
+    .firma-item        { font-size: 11px; }
+    .inf-firma-centro  { font-size: 11px; }
+
+    .inf-pie { font-size: 10px; margin-top: 10px; }
 
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
