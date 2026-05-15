@@ -255,7 +255,7 @@
     letter-spacing: .5px;
   }
 
-  /* PRINT — una sola hoja Letter portrait */
+  /* PRINT — hoja Letter portrait */
   @media print {
     @page { size: Letter portrait; margin: 10mm 12mm; }
 
@@ -264,40 +264,7 @@
     .container { padding: 0; max-width: 100%; }
     #informe-wrap { display: block !important; }
 
-    .informe-doc {
-      border: none;
-      padding: 0;
-      font-size: 12px;
-      line-height: 1.8;
-    }
-
-    .inf-titulo    { font-size: 13px; margin-bottom: 2px; }
-    .inf-subtitulo { font-size: 12px; margin-bottom: 6px; }
-
-    .inf-periodo   { margin-bottom: 8px; }
-    .inf-periodo th,
-    .inf-periodo td { padding: 3px 10px; font-size: 12px; }
-
-    .inf-parrafo {
-      font-size: 12px;
-      line-height: 1.35;
-      padding: 5px 10px;
-      margin-bottom: 8px;
-    }
-
-    .inf-seccion                 { margin-bottom: 7px; }
-    .inf-seccion .hdr-seccion td { padding: 4px 10px; font-size: 12px; letter-spacing: 0; }
-    .inf-seccion .hdr-col td     { padding: 3px 10px; font-size: 11px; }
-    .inf-seccion .fila-dato td   { padding: 3px 10px; font-size: 12px; }
-    .inf-seccion .fila-total td  { padding: 4px 10px; font-size: 12px; }
-    .inf-seccion .fila-saldo td  { padding: 4px 10px; font-size: 12px; }
-
-    .firmas-contenedor { margin-top: 24px; gap: 24px; min-height: auto; }
-    .firma-item        { font-size: 9px; }
-    .firma-linea       { margin-bottom: 8px; }
-    .inf-firma-centro  { padding-top: 20px; font-size: 9px; }
-
-    .inf-pie { font-size: 8px; margin-top: 6px; }
+    .informe-doc { border: none; border-radius: 0; padding: 0; }
 
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
