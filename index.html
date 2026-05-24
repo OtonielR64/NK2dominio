@@ -438,7 +438,7 @@
           </div>
           <div class="field">
             <label>Cantidad meses *</label>
-            <input type="number" id="i-cantidad" min="1" value="1" oninput="iCalcTotal()">
+            <input type="number" id="i-cantidad" min="1" value="1">
             <span class="err-msg" id="e-i-cantidad"></span>
           </div>
         </div>
@@ -664,7 +664,6 @@ function imprimirRecibo(d) {
   const fechaStr = `${dd}/${mm}/${yyyy}`;
 
   const meses = parseInt(d.cantidad) || 1;
-  const subtotalMes = (d.vlr_admon || 0) + (d.vlr_vehiculo || 0);
 
   /* ---------- HTML del recibo ---------- */
   const html = `<!DOCTYPE html>
@@ -723,9 +722,8 @@ ${fila('Cantidad:', meses + ' ' + (meses === 1 ? 'mes' : 'meses'))}
 
 ${sep}
 
-${d.vlr_admon  > 0 ? fila('Admón:',       $(d.vlr_admon))   : ''}
+${d.vlr_admon    > 0 ? fila('Admón:',       $(d.vlr_admon))    : ''}
 ${d.vlr_vehiculo > 0 ? fila('Vehículo(s):', $(d.vlr_vehiculo)) : ''}
-${meses > 1       ? fila('Subtotal/mes:', $(subtotalMes))     : ''}
 
 ${sep}
 
@@ -961,8 +959,7 @@ function iAplicarConcepto() {
 function iCalcTotal() {
   const a = parseFloat(document.getElementById('i-admon').value)||0;
   const v = parseFloat(document.getElementById('i-vehiculo').value)||0;
-  const c = parseInt(document.getElementById('i-cantidad').value)||1;
-  document.getElementById('i-total').textContent = fmt((a+v)*c);
+  document.getElementById('i-total').textContent = fmt(a+v);
 }
 
 async function iGuardar() {
@@ -1005,7 +1002,7 @@ async function iGuardar() {
     vlr_vehiculo: v,
     mes_pago: document.getElementById('i-mes').value,
     cantidad: c,
-    total: (a+v)*c,
+    total: a+v,
     observacion: document.getElementById('i-obs').value.trim()
   };
 
