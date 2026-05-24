@@ -232,6 +232,32 @@
   .btn-print { background: #2c5f8a; color: #fff; border-color: #2c5f8a; }
   .btn-print:disabled { background: #a0b8cc; border-color: #a0b8cc; cursor: not-allowed; opacity: 1; }
 
+  /* MODAL IMPRESIÓN */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 24px 20px;
+    width: min(340px, 92vw);
+    box-shadow: 0 8px 32px rgba(0,0,0,.22);
+    text-align: center;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .modal-icon { font-size: 36px; margin-bottom: 10px; }
+  .modal-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .modal-sub   { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  .modal-btns  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-btns .btn { margin: 0; }
+
   /* SPINNER */
   .spinner {
     display: none;
@@ -581,6 +607,19 @@
 
 </div><!-- /container -->
 
+<!-- MODAL: ¿Desea imprimir el recibo? -->
+<div class="modal-overlay" id="modal-imprimir">
+  <div class="modal-box">
+    <div class="modal-icon">🖨</div>
+    <div class="modal-title" id="modal-titulo">Recibo guardado</div>
+    <div class="modal-sub" id="modal-subtitulo">¿Desea imprimir el recibo en la impresora térmica?</div>
+    <div class="modal-btns">
+      <button class="btn btn-print" onclick="modalConfirmarImpresion()">Sí, imprimir</button>
+      <button class="btn btn-cancel" onclick="modalCerrar()">No, gracias</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════
 // CONFIGURACIÓN
@@ -591,6 +630,18 @@ let API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/
 // IMPRESIÓN DE RECIBO — TÉRMICA 58 mm
 // ═══════════════════════════════════════
 let ultimoRecibo = null;
+
+function modalCerrar() {
+  document.getElementById('modal-imprimir').classList.remove('show');
+}
+function modalConfirmarImpresion() {
+  modalCerrar();
+  imprimirRecibo(ultimoRecibo);
+}
+// Cerrar el modal al hacer clic en el fondo oscuro
+document.getElementById('modal-imprimir').addEventListener('click', function(e) {
+  if (e.target === this) modalCerrar();
+});
 
 function imprimirUltimoRecibo() {
   if (!ultimoRecibo) {
@@ -971,10 +1022,10 @@ async function iGuardar() {
       btnPrint.title = 'Reimprimir recibo en impresora térmica 58mm';
       iLimpiar();
       cargarDatos();
-      // Preguntar si desea imprimir (igual que en la versión Excel/VBA)
-      if (confirm('✅ Recibo N° ' + datos.factura + ' guardado.\n\n¿Desea imprimir el recibo en la impresora térmica?')) {
-        imprimirRecibo(ultimoRecibo);
-      }
+      // Mostrar modal de confirmación de impresión
+      document.getElementById('modal-titulo').textContent = '✅ Recibo N° ' + datos.factura + ' guardado';
+      document.getElementById('modal-subtitulo').textContent = '¿Desea imprimir el recibo en la impresora térmica?';
+      document.getElementById('modal-imprimir').classList.add('show');
     } else {
       alert('Error al guardar: ' + res.error);
     }
