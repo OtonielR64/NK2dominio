@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(!['admin','visor'].includes(localStorage.getItem('nk2_role')))location.replace('login.html?next='+encodeURIComponent(location.href));</script>
+<script src="session-timeout.js"></script>
+<title>Morosos — NK2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --ing: #1a5c2a; --ing-light: #e8f5ec;
+    --sal: #7a1a1a; --sal-light: #faeaea;
+    --bg: #f4f3f0; --card: #fff; --border: #dddbd6;
+    --text: #1a1a18; --muted: #6b6b66;
+    --amber: #854f0b; --amber-light: #fdf3e3;
+    --err: #c0392b; --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  .site-header { background: var(--text); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .site-header h1 { font-size: 13px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a { font-size: 12px; color: #aaa; text-decoration: none; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a:hover { color: #fff; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+  .card-header { padding: 12px 18px; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); background: #fafaf8; color: var(--muted); }
+  .card-body { padding: 18px; }
+
+  /* FILTROS */
+  .filtros-wrap { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+
+  .field { display: flex; flex-direction: column; }
+  label { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; font-family: 'IBM Plex Mono', monospace; }
+
+  .meses-input { display: flex; align-items: center; gap: 10px; }
+  .meses-input input { width: 80px; padding: 8px 10px; font-size: 20px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; border: 1px solid var(--border); border-radius: var(--radius); text-align: center; outline: none; }
+  .meses-input input:focus { border-color: #999; }
+  .meses-lbl { font-size: 13px; color: var(--muted); }
+
+  /* RADIO BUTTONS */
+  .radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .radio-item input[type=radio] { width: 16px; height: 16px; accent-color: var(--text); cursor: pointer; }
+  .radio-item span { font-size: 13px; }
+
+  /* BOTONES */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .btn { padding: 9px 20px; font-size: 13px; font-weight: 500; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+  .btn-sec { background: #fff; color: var(--text); }
+  .btn-excel { background: #1d6f42; color: #fff; border-color: #1d6f42; }
+  .btn-print { background: #2980b9; color: #fff; border-color: #2980b9; }
+
+  /* CONTADOR */
+  .contador { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; background: #fafaf8; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .contador strong { font-family: 'IBM Plex Mono', monospace; font-size: 15px; }
+  .contador-rojo { color: var(--err); }
+  .contador-verde { color: var(--ing); }
+
+  /* TABLA */
+  .tabla-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #fafaf8; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  th:hover { background: #f0ede8; }
+  th .sort-icon { margin-left: 4px; opacity: .4; }
+  th.sorted .sort-icon { opacity: 1; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0ede8; vertical-align: middle; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-ok { background: var(--ing-light); color: var(--ing); }
+  .badge-leve { background: var(--amber-light); color: var(--amber); }
+  .badge-mora { background: var(--sal-light); color: var(--sal); }
+  .badge-na { background: #f0ede8; color: var(--muted); }
+
+  .meses-num { font-weight: 700; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  .meses-num.ok { color: var(--ing); }
+  .meses-num.leve { color: var(--amber); }
+  .meses-num.mora { color: var(--err); }
+  .meses-num.na { color: var(--muted); font-size: 12px; font-weight: 400; }
+
+  .fecha-pago { font-size: 12px; font-family: 'IBM Plex Mono', monospace; color: var(--muted); }
+  .sin-registro { font-size: 12px; color: var(--err); font-style: italic; }
+
+  .empty { text-align: center; padding: 50px; color: var(--muted); font-size: 13px; }
+  .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+  .err-input { border-color: var(--err) !important; background: #fff8f8; }
+
+  @media print {
+    .site-header, .informes-nav, .card:first-child, .btn-row { display: none !important; }
+    body { background: #fff; }
+    .container { padding: 0; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <h1>Control de Morosos · NK2</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <a href="index.html" id="lnk-volver">← Volver a Formularios</a>
+    <button onclick="cerrarSesion()" style="background:#4a4a4a;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;">🔒 Salir</button>
+  </div>
+</div>
+
+<style>
+.informes-nav{background:#fff;border-bottom:1px solid #dddbd6;padding:0 16px;display:flex;gap:0;overflow-x:auto}
+.informes-nav a{padding:10px 14px;font-size:12px;font-weight:500;color:#6b6b66;text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap;font-family:'IBM Plex Sans',sans-serif;transition:color .15s}
+.informes-nav a:hover{color:#1a1a18}
+.informes-nav a.active{color:#1a5c2a;border-bottom-color:#1a5c2a;font-weight:600}
+</style>
+<nav class="informes-nav">
+  <a href="informe.html">📊 Informe Detallado</a>
+  <a href="morosos.html" class="active">⚠ Mora</a>
+  <a href="informe_mensual.html">📄 Informe General</a>
+  <a href="reporte_filtro.html">📋 Reporte por Fechas</a>
+</nav>
+
+<div class="container">
+
+  <!-- FILTROS -->
+  <div class="card">
+    <div class="card-header">Parámetros de búsqueda</div>
+    <div class="card-body">
+      <div class="filtros-wrap">
+
+        <div class="field">
+          <label>Meses mínimos sin pagar</label>
+          <div class="meses-input">
+            <input type="number" id="min-meses" value="1" min="1" max="24">
+            <span class="meses-lbl">mes(es) o más</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Filtrar por tipo de pago</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="tipo" value="admon"> <span>Solo Administración (casa)</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="tipo" value="vehiculo"> <span>Solo Vehículo</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="tipo" value="ambos" checked> <span>Admón o Vehículo (ambos)</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="buscar()">🔍 Buscar</button>
+        <button class="btn btn-sec" onclick="limpiar()">Limpiar</button>
+        <button class="btn btn-print" onclick="window.print()">🖨 Imprimir</button>
+        <button class="btn btn-excel" onclick="exportarExcel()">↓ Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="card" id="card-resultado" style="display:none">
+    <div class="contador">
+      <span>Registros encontrados: <strong id="lbl-contador" class="contador-rojo">0</strong></span>
+      <span id="lbl-filtro" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div class="tabla-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)">Interior <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable(1)">Nombre <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable(2)">Últ. pago Admón <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable(3)">Meses sin Admón <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable(4)">Últ. pago Vehículo <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable(5)">Meses sin Vehículo <span class="sort-icon">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-morosos"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+localStorage.setItem('nk2_api_url', API_URL);
+function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
+if (localStorage.getItem('nk2_role') === 'visor') {
+  const lnk = document.getElementById('lnk-volver');
+  if (lnk) { lnk.href = 'informe.html'; lnk.textContent = '← Inicio'; }
+}
+
+const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+let datosIng = [], habitantes = [];
+let resultados = [];
+let sortCol = 3, sortAsc = true;
+
+function apiFetch(action, params={}) {
+  return fetch(API_URL+'?'+new URLSearchParams({action,...params})).then(r=>r.json());
+}
+
+async function cargarDatos() {
+  if (!datosIng.length) {
+    const [ing, hab] = await Promise.all([apiFetch('getIngresos'), apiFetch('getHabitantes')]);
+    datosIng = ing || [];
+    habitantes = hab || [];
+  }
+}
+
+function mesStrADate(mesStr) {
+  if (!mesStr) return null;
+  const s = String(mesStr).toLowerCase().trim();
+
+  // Formato ISO: "2026-01-01" o "2026-01"
+  if (/^\d{4}-\d{2}/.test(s)) {
+    const parts = s.split('-');
+    const y = parseInt(parts[0]);
+    const m = parseInt(parts[1]) - 1; // 0-based
+    if (!isNaN(y) && !isNaN(m)) return new Date(y, m, 1);
+  }
+
+  // Formato texto: "ene-2026"
+  const parts = s.split('-');
+  if (parts.length >= 2) {
+    const mi = meses.indexOf(parts[0]);
+    const y = parseInt(parts[parts.length - 1]);
+    if (mi >= 0 && !isNaN(y)) return new Date(y, mi, 1);
+  }
+
+  return null;
+}
+
+function diffMeses(fecha) {
+  // Compara la fecha del último MES_PAGO contra HOY
+  // Retorna cuántos meses han pasado desde ese pago hasta hoy
+  if (!fecha) return 9999;
+  const hoy = new Date();
+  const hoyAnio = hoy.getFullYear();
+  const hoyMes  = hoy.getMonth(); // 0-based
+  const pagoAnio = fecha.getFullYear();
+  const pagoMes  = fecha.getMonth(); // 0-based
+  // Diferencia en meses exactos
+  const diff = (hoyAnio - pagoAnio) * 12 + (hoyMes - pagoMes);
+  return diff;
+}
+
+function fmtFecha(d) {
+  if (!d) return null;
+  const mesesNombres = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return mesesNombres[d.getMonth()] + '-' + d.getFullYear();
+}
+
+async function buscar() {
+  const minMesesEl = document.getElementById('min-meses');
+  const minMeses = parseInt(minMesesEl.value);
+  if (isNaN(minMeses) || minMeses < 1) {
+    minMesesEl.classList.add('err-input');
+    minMesesEl.focus();
+    alert('Ingresa el número mínimo de meses sin pagar.');
+    return;
+  }
+  minMesesEl.classList.remove('err-input');
+
+  const tipo = document.querySelector('input[name="tipo"]:checked').value;
+
+  document.getElementById('tbody-morosos').innerHTML =
+    '<tr><td colspan="6" class="loading">Cargando datos...</td></tr>';
+  document.getElementById('card-resultado').style.display = 'block';
+
+  await cargarDatos();
+
+  // Construir diccionario por interior
+  // dict[interior] = { nombre, ultAdmon: Date|null, ultVeh: Date|null, tieneVeh: bool }
+  const dict = {};
+
+  // Inicializar con todos los habitantes
+  habitantes.forEach(h => {
+    dict[String(h.int)] = {
+      nombre: h.nombre,
+      ultAdmon: null,
+      ultVeh: null,
+      tieneVeh: false
+    };
+  });
+
+  // Procesar ingresos
+  const conceptosCasa = ['11','19','20'];
+  const conceptosVeh  = ['12','14','15','16','17','18'];
+  const conceptosAmbos = ['13'];
+
+  datosIng.forEach(r => {
+    const inter = String(r[2]).trim();
+    const cod = String(r[6]).trim();
+    const mesPago = String(r[10]).trim();
+    const cantidad = parseInt(r[11])||1;
+    if (!dict[inter]) return;
+
+    // Calcular fecha del último mes que cubre este pago
+    const fechaBase = mesStrADate(mesPago);
+    if (!fechaBase) return;
+    const fechaFin = new Date(fechaBase.getFullYear(), fechaBase.getMonth() + cantidad - 1, 1);
+
+    const esAdmon = conceptosCasa.includes(cod) || conceptosAmbos.includes(cod);
+    const esVeh   = conceptosVeh.includes(cod) || conceptosAmbos.includes(cod);
+
+    if (esAdmon) {
+      if (!dict[inter].ultAdmon || fechaFin > dict[inter].ultAdmon)
+        dict[inter].ultAdmon = fechaFin;
+    }
+    if (esVeh) {
+      dict[inter].tieneVeh = true;
+      if (!dict[inter].ultVeh || fechaFin > dict[inter].ultVeh)
+        dict[inter].ultVeh = fechaFin;
+    }
+  });
+
+  // Calcular meses de mora y aplicar filtros
+  resultados = [];
+  Object.entries(dict).forEach(([inter, d]) => {
+    const mAdmon = diffMeses(d.ultAdmon);
+    const mVeh   = d.tieneVeh ? diffMeses(d.ultVeh) : -1;
+
+    let incluir = false;
+    if (tipo === 'admon')    incluir = mAdmon >= minMeses;
+    else if (tipo === 'vehiculo') incluir = d.tieneVeh && mVeh >= minMeses;
+    else incluir = (mAdmon >= minMeses) || (d.tieneVeh && mVeh >= minMeses);
+
+    if (!incluir) return;
+
+    resultados.push({
+      inter, nombre: d.nombre,
+      ultAdmon: d.ultAdmon, mAdmon,
+      ultVeh: d.ultVeh, mVeh,
+      tieneVeh: d.tieneVeh
+    });
+  });
+
+  // Ordenar
+  sortData();
+  renderTabla();
+
+  // Contador
+  const cont = document.getElementById('lbl-contador');
+  cont.textContent = resultados.length;
+  cont.className = resultados.length > 0 ? 'contador-rojo' : 'contador-verde';
+
+  const tipoLbl = tipo === 'admon' ? 'Solo Admón' : tipo === 'vehiculo' ? 'Solo Vehículo' : 'Admón + Vehículo';
+  document.getElementById('lbl-filtro').textContent = `Mínimo ${minMeses} mes(es) · ${tipoLbl}`;
+
+  if (!resultados.length) {
+    document.getElementById('tbody-morosos').innerHTML =
+      `<tr><td colspan="6" class="empty">✓ No se encontraron morosos con ${minMeses} o más meses sin pagar.</td></tr>`;
+  }
+}
+
+function badgeMeses(m, tieneVeh) {
+  if (!tieneVeh && m === -1) return '<span class="badge badge-na">No aplica</span>';
+  if (m === 9999) return '<span class="badge badge-mora">Sin pago</span>';
+  if (m <= 0) return '<span class="badge badge-ok">Al día</span>';
+  if (m <= 2) return '<span class="badge badge-leve">Mora leve</span>';
+  return '<span class="badge badge-mora">En mora</span>';
+}
+
+function numMeses(m, tieneVeh) {
+  if (!tieneVeh && m === -1) return '<span class="meses-num na">No aplica</span>';
+  if (m === 9999) return '<span class="meses-num mora">Sin pago</span>';
+  if (m <= 0) return '<span class="meses-num ok">0</span>';
+  const cls = m <= 2 ? 'leve' : 'mora';
+  return `<span class="meses-num ${cls}">${m}</span>`;
+}
+
+function renderTabla() {
+  const tbody = document.getElementById('tbody-morosos');
+  if (!resultados.length) return;
+  tbody.innerHTML = resultados.map(r => `
+    <tr>
+      <td><strong>${r.inter}</strong></td>
+      <td>${r.nombre}</td>
+      <td>
+        ${r.ultAdmon
+          ? `<span class="fecha-pago">${fmtFecha(r.ultAdmon)}</span>`
+          : `<span class="sin-registro">Sin registro</span>`}
+      </td>
+      <td>
+        ${badgeMeses(r.mAdmon, true)}
+        &nbsp;${numMeses(r.mAdmon, true)}
+      </td>
+      <td>
+        ${!r.tieneVeh
+          ? '<span class="badge badge-na">No aplica</span>'
+          : r.ultVeh
+            ? `<span class="fecha-pago">${fmtFecha(r.ultVeh)}</span>`
+            : `<span class="sin-registro">Sin registro</span>`}
+      </td>
+      <td>
+        ${badgeMeses(r.mVeh, r.tieneVeh)}
+        &nbsp;${numMeses(r.mVeh, r.tieneVeh)}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function sortData() {
+  resultados.sort((a, b) => {
+    let va, vb;
+    if (sortCol === 0) { va = a.inter; vb = b.inter; }
+    else if (sortCol === 1) { va = a.nombre; vb = b.nombre; }
+    else if (sortCol === 2) { va = a.ultAdmon?.getTime()||0; vb = b.ultAdmon?.getTime()||0; }
+    else if (sortCol === 3) { va = a.mAdmon; vb = b.mAdmon; }
+    else if (sortCol === 4) { va = a.ultVeh?.getTime()||0; vb = b.ultVeh?.getTime()||0; }
+    else if (sortCol === 5) { va = a.mVeh; vb = b.mVeh; }
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = col >= 3 ? false : true; }
+  document.querySelectorAll('th').forEach((th, i) => {
+    th.classList.toggle('sorted', i === col);
+    const icon = th.querySelector('.sort-icon');
+    if (icon) icon.textContent = i === col ? (sortAsc ? '↑' : '↓') : '↕';
+  });
+  sortData();
+  renderTabla();
+}
+
+function limpiar() {
+  document.getElementById('min-meses').value = 1;
+  document.querySelector('input[name="tipo"][value="ambos"]').checked = true;
+  document.getElementById('card-resultado').style.display = 'none';
+  document.getElementById('tbody-morosos').innerHTML = '';
+  resultados = [];
+}
+
+function exportarExcel() {
+  if (!resultados.length) { alert('Primero realiza una búsqueda.'); return; }
+  const headers = ['Interior','Nombre','Últ. Pago Admón','Meses sin Admón','Últ. Pago Vehículo','Meses sin Vehículo'];
+  const rows = resultados.map(r => [
+    '"'+r.inter+'"',
+    '"'+r.nombre+'"',
+    '"'+(r.ultAdmon ? fmtFecha(r.ultAdmon) : 'Sin registro')+'"',
+    r.mAdmon === 9999 ? '"Sin pago"' : r.mAdmon,
+    '"'+(!r.tieneVeh ? 'No aplica' : r.ultVeh ? fmtFecha(r.ultVeh) : 'Sin registro')+'"',
+    !r.tieneVeh ? '"No aplica"' : r.mVeh === 9999 ? '"Sin pago"' : r.mVeh
+  ].join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `NK2_Morosos_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+</script>
+</body>
+</html>

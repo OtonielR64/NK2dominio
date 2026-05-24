@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(!['admin','visor'].includes(localStorage.getItem('nk2_role')))location.replace('login.html?next='+encodeURIComponent(location.href));</script>
+<script src="session-timeout.js"></script>
+<title>Reporte por Fechas — NK2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --ing: #1a5c2a; --ing-light: #e8f5ec;
+    --sal: #7a1a1a; --sal-light: #faeaea;
+    --bg: #f4f3f0; --card: #fff; --border: #dddbd6;
+    --text: #1a1a18; --muted: #6b6b66;
+    --amber: #854f0b; --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  .site-header { background: var(--text); color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .site-header h1 { font-size: 13px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a { font-size: 12px; color: #aaa; text-decoration: none; font-family: 'IBM Plex Mono', monospace; }
+  .site-header a:hover { color: #fff; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+  .card-header { padding: 12px 18px; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); background: #fafaf8; color: var(--muted); }
+  .card-body { padding: 18px; }
+
+  /* Tabs Ingresos / Egresos */
+  .tipo-tabs { display: flex; gap: 0; margin-bottom: 18px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; width: fit-content; }
+  .ttab { padding: 9px 28px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; background: #fff; color: var(--muted); font-family: 'IBM Plex Sans', sans-serif; transition: background .15s, color .15s; border-right: 1px solid var(--border); }
+  .ttab:last-child { border-right: none; }
+  .ttab.active-ing { background: var(--ing); color: #fff; }
+  .ttab.active-sal { background: var(--sal); color: #fff; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 440px; }
+  .field { display: flex; flex-direction: column; }
+  label { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; font-family: 'IBM Plex Mono', monospace; }
+  input[type="date"] { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; color: var(--text); font-family: 'IBM Plex Sans', sans-serif; outline: none; }
+  input[type="date"]:focus { border-color: #999; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+  .btn { padding: 9px 18px; font-size: 13px; font-weight: 500; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+  .btn-pdf   { background: #c0392b; color: #fff; border-color: #c0392b; }
+  .btn-print { background: #2980b9; color: #fff; border-color: #2980b9; }
+  #lbl-count { font-size: 12px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+
+  /* Tarjetas de totales */
+  .totales-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tot-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .tot-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; font-family: 'IBM Plex Mono', monospace; margin-bottom: 5px; }
+  .tot-val { font-size: 18px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+  .tot-val.green { color: var(--ing); }
+  .tot-val.red   { color: var(--sal); }
+  .tot-val.amber { color: var(--amber); }
+
+  /* Tabla de detalle */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; }
+  th { background: #fafaf8; padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 7px 10px; border-bottom: 1px solid #f0ede8; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  tr.tr-total td { font-weight: 600; background: #fafaf8; border-top: 2px solid var(--border); border-bottom: none; }
+  .td-mono  { font-family: 'IBM Plex Mono', monospace; }
+  .td-num   { font-family: 'IBM Plex Mono', monospace; text-align: right; }
+  .td-right { text-align: right; }
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+  /* Encabezado de impresión (oculto en pantalla) */
+  .print-header { display: none; }
+
+  /* ── Estilos de impresión / PDF ── */
+  @media print {
+    @page { size: Letter landscape; margin: 10mm; }
+
+    .site-header,
+    .informes-nav,
+    .controls-card { display: none !important; }
+
+    body { background: #fff; font-size: 10px; }
+    .container { padding: 0; max-width: 100%; }
+
+    .print-header { display: block; text-align: center; margin-bottom: 12px; }
+    .print-header h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+    .print-header p  { font-size: 11px; color: #555; margin-top: 3px; }
+
+    .card { border: 1px solid #ccc; margin-bottom: 8px; }
+    #resultado-wrap > .card:first-child { page-break-inside: avoid; }
+    .card-header { padding: 5px 10px; font-size: 9px; }
+    .card-body { padding: 8px 10px; }
+
+    .totales-grid { gap: 6px; }
+    .tot-card { padding: 6px 10px; }
+    .tot-lbl  { font-size: 9px; margin-bottom: 2px; }
+    .tot-val  { font-size: 12px; }
+
+    table { font-size: 9px; min-width: unset; }
+    th { padding: 4px 6px; font-size: 8px; }
+    td { padding: 4px 6px; }
+  }
+
+  @media (max-width: 600px) {
+    .grid-2      { grid-template-columns: 1fr; max-width: 100%; }
+    .totales-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <h1>Reporte por Fechas · NK2</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <a href="index.html" id="lnk-volver">← Volver a Formularios</a>
+    <button onclick="cerrarSesion()" style="background:#4a4a4a;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;">🔒 Salir</button>
+  </div>
+</div>
+
+<style>
+.informes-nav{background:#fff;border-bottom:1px solid #dddbd6;padding:0 16px;display:flex;gap:0;overflow-x:auto}
+.informes-nav a{padding:10px 14px;font-size:12px;font-weight:500;color:#6b6b66;text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap;font-family:'IBM Plex Sans',sans-serif;transition:color .15s}
+.informes-nav a:hover{color:#1a1a18}
+.informes-nav a.active{color:#1a5c2a;border-bottom-color:#1a5c2a;font-weight:600}
+</style>
+<nav class="informes-nav">
+  <a href="informe.html">📊 Informe Detallado</a>
+  <a href="morosos.html">⚠ Mora</a>
+  <a href="informe_mensual.html">📄 Informe General</a>
+  <a href="reporte_filtro.html" class="active">📋 Reporte por Fechas</a>
+</nav>
+
+<div class="container">
+
+  <!-- ── CONTROLES ── -->
+  <div class="card controls-card">
+    <div class="card-header">Filtrar por período</div>
+    <div class="card-body">
+
+      <div class="tipo-tabs">
+        <button class="ttab active-ing" id="tab-ing" onclick="setTipo('ing')">Ingresos</button>
+        <button class="ttab"            id="tab-sal" onclick="setTipo('sal')">Egresos</button>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Fecha desde</label>
+          <input type="date" id="fecha-desde">
+        </div>
+        <div class="field">
+          <label>Fecha hasta</label>
+          <input type="date" id="fecha-hasta">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="filtrar()">Filtrar</button>
+        <button class="btn btn-print"   onclick="imprimir()">🖨 Imprimir</button>
+        <button class="btn btn-pdf"     onclick="imprimir()">↓ PDF</button>
+        <span id="lbl-count"></span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── RESULTADOS ── -->
+  <div id="resultado-wrap" style="display:none">
+
+    <!-- Encabezado visible solo al imprimir -->
+    <div class="print-header">
+      <h2>COMITÉ DE ORNATO Y SEGURIDAD — NUEVO KENNEDY 2do SECTOR</h2>
+      <p id="print-subtitulo"></p>
+    </div>
+
+    <!-- Totales -->
+    <div class="card">
+      <div class="card-header" id="hdr-totales">Totales</div>
+      <div class="card-body">
+        <div class="totales-grid" id="totales-grid"></div>
+      </div>
+    </div>
+
+    <!-- Detalle -->
+    <div class="card">
+      <div class="card-header" id="hdr-detalle">Detalle de registros</div>
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead id="thead-detalle"></thead>
+            <tbody id="tbody-detalle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /resultado-wrap -->
+
+</div>
+
+<script>
+const API_URL = localStorage.getItem('nk2_api_url') ||
+  'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+localStorage.setItem('nk2_api_url', API_URL);
+function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
+if (localStorage.getItem('nk2_role') === 'visor') {
+  const lnk = document.getElementById('lnk-volver');
+  if (lnk) { lnk.href = 'informe.html'; lnk.textContent = '← Inicio'; }
+}
+
+let tipoActivo = 'ing';
+let cacheIng   = null;
+let cacheSal   = null;
+
+/* ── Fechas por defecto: mes actual ── */
+const hoy = new Date();
+const pad = n => String(n).padStart(2, '0');
+const lastDay = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+document.getElementById('fecha-desde').value =
+  `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}-01`;
+document.getElementById('fecha-hasta').value =
+  `${lastDay.getFullYear()}-${pad(lastDay.getMonth()+1)}-${pad(lastDay.getDate())}`;
+
+/* ── Helpers ── */
+
+// Convierte valores monetarios con cualquier formato al número correcto.
+// Maneja: número JS, "95000", "95.000" (colombiano), "95.000,50", "$ 95.000,00"
+const toNum = v => {
+  if (typeof v === 'number') return v;
+  let s = String(v).replace(/[$\s]/g, '').trim();
+  if (!s) return 0;
+  // Formato colombiano: separador de miles con punto, decimal con coma
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s))
+    return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
+  // Coma como único separador decimal (sin puntos de miles)
+  if (/^\d+(,\d+)?$/.test(s))
+    return parseFloat(s.replace(',', '.')) || 0;
+  return parseFloat(s) || 0;
+};
+
+const fmt = n => '$ ' + Math.round(toNum(n)).toLocaleString('es-CO');
+const fmtFecha = s => {
+  if (!s) return '';
+  const d = new Date(s + 'T12:00:00');
+  return d.toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'numeric'});
+};
+const fmtMes = m => {
+  if (!m) return '';
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const match = String(m).match(/^(\d{4})-(\d{2})/);
+  if (match) return meses[parseInt(match[2]) - 1] + '-' + match[1];
+  return m;
+};
+const apiFetch = action =>
+  fetch(API_URL + '?' + new URLSearchParams({action})).then(r => r.json());
+
+// Devuelve {admon, veh} para un registro de ingreso.
+// Si ambos son 0, los deriva usando el código de concepto + total.
+// Busca el código en r[6] (registros nuevos/normalizados) o r[4] (registros viejos).
+function resolverAdmonVeh(r) {
+  let admon = toNum(r[8]);
+  let veh   = toNum(r[9]);
+
+  if (admon === 0 && veh === 0) {
+    // Detectar dónde está el código de concepto (11-20 como entero exacto)
+    const esCodConc = v => {
+      const n = parseInt(String(v).trim());
+      return n >= 11 && n <= 20 && String(n) === String(v).trim();
+    };
+
+    let cod   = esCodConc(r[6]) ? String(r[6]).trim()
+              : esCodConc(r[4]) ? String(r[4]).trim()
+              : '';
+    let total    = toNum(r[12]);
+    let cantidad = Math.max(1, parseInt(r[11]) || 1);
+
+    // Si el total parece incorrecto (cero) intenta posición alternativa
+    if (total === 0) total = toNum(r[10]);
+
+    if (cod && total > 0) {
+      const porUnidad = total / cantidad;
+      if (['11', '19', '20'].includes(cod))                   admon = porUnidad;
+      else if (['12','14','15','16','17','18'].includes(cod))  veh   = porUnidad;
+    }
+  }
+  return { admon, veh };
+}
+
+/* ── Cambiar tab Ingresos / Egresos ── */
+function setTipo(t) {
+  tipoActivo = t;
+  const tabIng = document.getElementById('tab-ing');
+  const tabSal = document.getElementById('tab-sal');
+  tabIng.className = 'ttab' + (t === 'ing' ? ' active-ing' : '');
+  tabSal.className = 'ttab' + (t === 'sal' ? ' active-sal' : '');
+  document.getElementById('resultado-wrap').style.display = 'none';
+  document.getElementById('lbl-count').textContent = '';
+}
+
+/* ── Filtrar ── */
+async function filtrar() {
+  const desde = document.getElementById('fecha-desde').value;
+  const hasta  = document.getElementById('fecha-hasta').value;
+
+  if (!desde || !hasta) { alert('Selecciona las dos fechas.'); return; }
+  if (desde > hasta)    { alert('La fecha inicial debe ser menor o igual a la final.'); return; }
+
+  document.getElementById('resultado-wrap').style.display = 'none';
+  document.getElementById('lbl-count').textContent = 'Cargando…';
+
+  try {
+    if (tipoActivo === 'ing') {
+      if (!cacheIng) cacheIng = await apiFetch('getIngresos');
+      renderIngresos(cacheIng || [], desde, hasta);
+    } else {
+      if (!cacheSal) cacheSal = await apiFetch('getSalidas');
+      renderEgresos(cacheSal || [], desde, hasta);
+    }
+  } catch (e) {
+    alert('Error al cargar datos: ' + e.message);
+    document.getElementById('lbl-count').textContent = '';
+  }
+}
+
+/* ── INGRESOS ──────────────────────────────────────────────────────────────
+   r[0]=factura  r[1]=fecha     r[2]=interior  r[3]=nombre
+   r[4]=cod_admin r[5]=admin    r[6]=cod_conc  r[7]=concepto
+   r[8]=vlr_admon r[9]=vlr_veh r[10]=mes_pago r[11]=cantidad
+   r[12]=total    r[13]=observacion
+   Totales: vlr_admon (r[8])  |  vlr_vehiculo (r[9])  |  total (r[12])
+──────────────────────────────────────────────────────────────────────── */
+function renderIngresos(datos, desde, hasta) {
+  const filas = datos.filter(r => r[1] >= desde && r[1] <= hasta);
+  const n = filas.length;
+
+  let totAdmon = 0, totVeh = 0, totGen = 0;
+  filas.forEach(r => {
+    const { admon, veh } = resolverAdmonVeh(r);
+    totAdmon += admon;
+    totVeh   += veh;
+    totGen   += toNum(r[12]);
+  });
+
+  document.getElementById('hdr-totales').textContent = 'Totales — Ingresos';
+  document.getElementById('hdr-detalle').textContent =
+    `Detalle de ingresos — ${n} registro${n !== 1 ? 's' : ''}`;
+
+  document.getElementById('totales-grid').innerHTML = `
+    <div class="tot-card">
+      <div class="tot-lbl">Vlr. Admon</div>
+      <div class="tot-val green">${fmt(totAdmon)}</div>
+    </div>
+    <div class="tot-card">
+      <div class="tot-lbl">Vlr. Vehículo</div>
+      <div class="tot-val green">${fmt(totVeh)}</div>
+    </div>
+    <div class="tot-card">
+      <div class="tot-lbl">Total general</div>
+      <div class="tot-val green">${fmt(totGen)}</div>
+    </div>
+  `;
+
+  document.getElementById('thead-detalle').innerHTML = `
+    <tr>
+      <th># Recibo</th>
+      <th>Fecha</th>
+      <th>Int.</th>
+      <th>Nombre</th>
+      <th>Concepto</th>
+      <th class="td-right">Vlr. Admon</th>
+      <th class="td-right">Vlr. Vehículo</th>
+      <th>Mes pago</th>
+      <th class="td-right">Cant.</th>
+      <th class="td-right">Total</th>
+    </tr>
+  `;
+
+  const tbody = document.getElementById('tbody-detalle');
+  if (!n) {
+    tbody.innerHTML =
+      '<tr><td colspan="10" class="empty">Sin registros para el período seleccionado.</td></tr>';
+  } else {
+    tbody.innerHTML =
+      filas.map(r => {
+        const { admon, veh } = resolverAdmonVeh(r);
+        return `
+        <tr>
+          <td class="td-mono">${r[0]}</td>
+          <td class="td-mono">${fmtFecha(r[1])}</td>
+          <td>${r[2]}</td>
+          <td>${r[3]}</td>
+          <td>${r[7]}</td>
+          <td class="td-num">${fmt(admon)}</td>
+          <td class="td-num">${fmt(veh)}</td>
+          <td>${fmtMes(r[10])}</td>
+          <td class="td-num">${r[11]}</td>
+          <td class="td-num">${fmt(r[12])}</td>
+        </tr>`;
+      }).join('') +
+      `<tr class="tr-total">
+        <td colspan="5">TOTALES (${n} registros)</td>
+        <td class="td-num">${fmt(totAdmon)}</td>
+        <td class="td-num">${fmt(totVeh)}</td>
+        <td colspan="2"></td>
+        <td class="td-num">${fmt(totGen)}</td>
+      </tr>`;
+  }
+
+  document.getElementById('print-subtitulo').textContent =
+    `Ingresos — ${fmtFecha(desde)} al ${fmtFecha(hasta)}`;
+  mostrarResultado(n);
+}
+
+/* ── EGRESOS ───────────────────────────────────────────────────────────────
+   r[0]=cod_registro  r[1]=fecha       r[2]=cod_admin   r[3]=administrador
+   r[4]=cod_concepto  r[5]=concepto    r[6]=vlr_total   r[7]=abono
+   r[8]=saldo         r[9]=observacion
+   Totales: vlr_total (r[6])  |  abono (r[7])  |  saldo (r[8])
+──────────────────────────────────────────────────────────────────────── */
+function renderEgresos(datos, desde, hasta) {
+  const filas = datos.filter(r => r[1] >= desde && r[1] <= hasta);
+  const n = filas.length;
+
+  let totTotal = 0, totAbono = 0, totSaldo = 0;
+  filas.forEach(r => {
+    totTotal += parseFloat(r[6]) || 0;
+    totAbono += parseFloat(r[7]) || 0;
+    totSaldo += parseFloat(r[8]) || 0;
+  });
+
+  document.getElementById('hdr-totales').textContent = 'Totales — Egresos';
+  document.getElementById('hdr-detalle').textContent =
+    `Detalle de egresos — ${n} registro${n !== 1 ? 's' : ''}`;
+
+  document.getElementById('totales-grid').innerHTML = `
+    <div class="tot-card">
+      <div class="tot-lbl">Total facturado</div>
+      <div class="tot-val red">${fmt(totTotal)}</div>
+    </div>
+    <div class="tot-card">
+      <div class="tot-lbl">Total abonos</div>
+      <div class="tot-val amber">${fmt(totAbono)}</div>
+    </div>
+    <div class="tot-card">
+      <div class="tot-lbl">Saldo pendiente</div>
+      <div class="tot-val red">${fmt(totSaldo)}</div>
+    </div>
+  `;
+
+  document.getElementById('thead-detalle').innerHTML = `
+    <tr>
+      <th># Registro</th>
+      <th>Fecha</th>
+      <th>Administrador</th>
+      <th>Concepto</th>
+      <th class="td-right">Vlr. Total</th>
+      <th class="td-right">Abono</th>
+      <th class="td-right">Saldo</th>
+      <th>Observación</th>
+    </tr>
+  `;
+
+  const tbody = document.getElementById('tbody-detalle');
+  if (!n) {
+    tbody.innerHTML =
+      '<tr><td colspan="8" class="empty">Sin registros para el período seleccionado.</td></tr>';
+  } else {
+    tbody.innerHTML =
+      filas.map(r => `
+        <tr>
+          <td class="td-mono">${r[0]}</td>
+          <td class="td-mono">${fmtFecha(r[1])}</td>
+          <td>${r[3]}</td>
+          <td>${r[5]}</td>
+          <td class="td-num">${fmt(r[6])}</td>
+          <td class="td-num">${fmt(r[7])}</td>
+          <td class="td-num">${fmt(r[8])}</td>
+          <td>${r[9] || ''}</td>
+        </tr>
+      `).join('') +
+      `<tr class="tr-total">
+        <td colspan="4">TOTALES (${n} registros)</td>
+        <td class="td-num">${fmt(totTotal)}</td>
+        <td class="td-num">${fmt(totAbono)}</td>
+        <td class="td-num">${fmt(totSaldo)}</td>
+        <td></td>
+      </tr>`;
+  }
+
+  document.getElementById('print-subtitulo').textContent =
+    `Egresos — ${fmtFecha(desde)} al ${fmtFecha(hasta)}`;
+  mostrarResultado(n);
+}
+
+function mostrarResultado(n) {
+  document.getElementById('lbl-count').textContent = n + ' registro' + (n !== 1 ? 's' : '');
+  document.getElementById('resultado-wrap').style.display = 'block';
+  document.getElementById('resultado-wrap').scrollIntoView({behavior: 'smooth'});
+}
+
+function imprimir() {
+  if (document.getElementById('resultado-wrap').style.display === 'none') {
+    alert('Primero aplica un filtro para ver los datos.');
+    return;
+  }
+  window.print();
+}
+</script>
+</body>
+</html>
