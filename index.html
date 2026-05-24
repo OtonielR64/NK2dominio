@@ -963,14 +963,18 @@ async function iGuardar() {
     if(res.ok){
       showSuccess('success-ing', res.mensaje);
       document.getElementById('toast-ing').classList.remove('show');
-      // Habilitar botón de impresión y guardar datos del recibo
+      // Guardar datos para reimpresión y habilitar botón
       ultimoRecibo = { ...datos };
       const btnPrint = document.getElementById('btn-imprimir-ing');
       btnPrint.disabled = false;
-      btnPrint.textContent = '🖨 Imprimir Recibo N° ' + datos.factura;
-      btnPrint.title = 'Imprimir recibo en impresora térmica 58mm';
+      btnPrint.textContent = '🖨 Reimprimir Recibo N° ' + datos.factura;
+      btnPrint.title = 'Reimprimir recibo en impresora térmica 58mm';
       iLimpiar();
       cargarDatos();
+      // Preguntar si desea imprimir (igual que en la versión Excel/VBA)
+      if (confirm('✅ Recibo N° ' + datos.factura + ' guardado.\n\n¿Desea imprimir el recibo en la impresora térmica?')) {
+        imprimirRecibo(ultimoRecibo);
+      }
     } else {
       alert('Error al guardar: ' + res.error);
     }
