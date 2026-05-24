@@ -229,6 +229,8 @@
   .btn-sal { background: var(--sal); color: #fff; border-color: var(--sal); }
   .btn-sec { background: #fff; color: var(--text); }
   .btn-cancel { background: #4a4a4a; color: #fff; border-color: #4a4a4a; }
+  .btn-print { background: #2c5f8a; color: #fff; border-color: #2c5f8a; }
+  .btn-print:disabled { background: #a0b8cc; border-color: #a0b8cc; cursor: not-allowed; opacity: 1; }
 
   /* SPINNER */
   .spinner {
@@ -448,6 +450,13 @@
           </button>
           <button class="btn btn-sec" onclick="iLimpiar()">Limpiar</button>
           <button class="btn btn-cancel" onclick="iLimpiar()">Cancelar</button>
+          <button class="btn btn-print" id="btn-imprimir-ing"
+                  onclick="imprimirUltimoRecibo()"
+                  disabled
+                  style="grid-column:1/-1"
+                  title="Disponible después de guardar un recibo">
+            🖨 Imprimir Recibo
+          </button>
         </div>
 
       </div>
@@ -577,6 +586,133 @@
 // CONFIGURACIÓN
 // ═══════════════════════════════════════
 let API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+
+// ═══════════════════════════════════════
+// IMPRESIÓN DE RECIBO — TÉRMICA 58 mm
+// ═══════════════════════════════════════
+let ultimoRecibo = null;
+
+function imprimirUltimoRecibo() {
+  if (!ultimoRecibo) {
+    alert('No hay recibo disponible. Guarda primero el registro.');
+    return;
+  }
+  imprimirRecibo(ultimoRecibo);
+}
+
+function imprimirRecibo(d) {
+  /* ---------- helpers ---------- */
+  const $ = n => '$ ' + Math.round(n).toLocaleString('es-CO');
+  const fila = (lbl, val) =>
+    `<div class="row"><span class="lbl">${lbl}</span><span class="val">${val}</span></div>`;
+  const sep = '<hr>';
+
+  // Parsear fecha ISO "yyyy-mm-dd" sin desfase de zona horaria
+  const [yyyy, mm, dd] = d.fecha.split('-');
+  const fechaStr = `${dd}/${mm}/${yyyy}`;
+
+  const meses = parseInt(d.cantidad) || 1;
+  const subtotalMes = (d.vlr_admon || 0) + (d.vlr_vehiculo || 0);
+
+  /* ---------- HTML del recibo ---------- */
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Recibo ${d.factura}</title>
+<style>
+  @page { size: 58mm auto; margin: 1.5mm 2mm; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 8.5pt;
+    width: 54mm;
+    color: #000;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  hr  { border:none; border-top:1px dashed #555; margin:2mm 0; }
+  .center { text-align:center; }
+  .bold   { font-weight:bold; }
+  .lbl    { color:#555; font-size:7.5pt; }
+  .val    { font-weight:500; }
+  .row    { display:flex; justify-content:space-between; margin-bottom:1.2mm; }
+  .big    { font-size:10pt; font-weight:bold; }
+  .small  { font-size:7pt; }
+  .indent { margin-left:2mm; }
+  .tail   { height:10mm; }
+</style>
+</head>
+<body>
+
+<div class="center">
+  <p class="bold" style="font-size:9pt;letter-spacing:.5px">COMITÉ ORNATO Y SEG.</p>
+  <p class="lbl">Nuevo Kennedy II — Sector 2</p>
+</div>
+
+${sep}
+
+${fila('Recibo N°:', '<strong>' + d.factura + '</strong>')}
+${fila('Fecha:', fechaStr)}
+
+${sep}
+
+${fila('Interior:', '<strong>' + d.interior + '</strong>')}
+<p class="lbl">Residente:</p>
+<p class="bold indent" style="margin-bottom:1.2mm">${d.nombre || '—'}</p>
+
+${sep}
+
+<p class="lbl">Concepto:</p>
+<p class="indent" style="margin-bottom:1.2mm;font-size:8pt">${d.concepto}</p>
+${fila('Mes de pago:', d.mes_pago)}
+${fila('Cantidad:', meses + ' ' + (meses === 1 ? 'mes' : 'meses'))}
+
+${sep}
+
+${d.vlr_admon  > 0 ? fila('Admón:',       $(d.vlr_admon))   : ''}
+${d.vlr_vehiculo > 0 ? fila('Vehículo(s):', $(d.vlr_vehiculo)) : ''}
+${meses > 1       ? fila('Subtotal/mes:', $(subtotalMes))     : ''}
+
+${sep}
+
+<div class="row big">
+  <span>TOTAL PAGADO:</span>
+  <span>${$(d.total)}</span>
+</div>
+
+${sep}
+
+${d.observacion ? `<p style="margin-bottom:1.2mm"><span class="lbl">Obs: </span>${d.observacion}</p>` : ''}
+${fila('<span class="lbl">Recibido por:</span>', d.administrador)}
+
+${sep}
+
+<div class="center small" style="margin-top:2mm">
+  <p>¡Gracias por su pago puntual!</p>
+  <p style="margin-top:1mm">Conserve este recibo</p>
+</div>
+
+<div class="tail"></div>
+</body>
+</html>`;
+
+  /* ---------- abrir ventana e imprimir ---------- */
+  const w = window.open(
+    '', '_blank',
+    'width=260,height=520,toolbar=0,menubar=0,location=0,status=0,scrollbars=0,resizable=0'
+  );
+  if (!w) {
+    alert('⚠ Permite las ventanas emergentes en este sitio para imprimir el recibo.');
+    return;
+  }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  // Pequeña pausa para que el navegador renderice antes de llamar print()
+  setTimeout(() => w.print(), 450);
+}
 localStorage.setItem('nk2_api_url', API_URL);
 function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
 let habitantes = [];
@@ -827,6 +963,12 @@ async function iGuardar() {
     if(res.ok){
       showSuccess('success-ing', res.mensaje);
       document.getElementById('toast-ing').classList.remove('show');
+      // Habilitar botón de impresión y guardar datos del recibo
+      ultimoRecibo = { ...datos };
+      const btnPrint = document.getElementById('btn-imprimir-ing');
+      btnPrint.disabled = false;
+      btnPrint.textContent = '🖨 Imprimir Recibo N° ' + datos.factura;
+      btnPrint.title = 'Imprimir recibo en impresora térmica 58mm';
       iLimpiar();
       cargarDatos();
     } else {
