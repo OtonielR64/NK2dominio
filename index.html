@@ -1235,10 +1235,15 @@ async function sGuardar() {
   try {
     const res = await apiFetch('saveSalida', datos);
     if(res.ok){
-      showSuccess('success-sal', res.mensaje);
       document.getElementById('toast-sal').classList.remove('show');
       sLimpiar();
       cargarDatos();
+      // Mostrar banner DESPUÉS de limpiar para que sea visible
+      const banner = document.getElementById('success-sal');
+      banner.innerHTML = '✅ Egreso registrado correctamente — Registro N° <strong>' + datos.cod_registro + '</strong>';
+      banner.classList.add('show');
+      banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => banner.classList.remove('show'), 5000);
     } else {
       alert('Error al guardar: ' + res.error);
     }
