@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(localStorage.getItem('nk2_role')!=='admin')location.replace('login.html?next='+encodeURIComponent(location.href));</script>
+<title>Residentes — NK2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ing:        #1a5c2a;
+    --ing-light:  #e8f5ec;
+    --bg:         #f4f3f0;
+    --card:       #ffffff;
+    --border:     #dddbd6;
+    --text:       #1a1a18;
+    --muted:      #6b6b66;
+    --err:        #c0392b;
+    --err-bg:     #fdf3f2;
+    --amber:      #854f0b;
+    --radius:     6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--text);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .site-header h1 { font-size: 13px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
+  .btn-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; background: #3a3a3a; color: #fff;
+    border: none; border-radius: var(--radius); font-size: 12px;
+    font-weight: 500; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+    text-decoration: none; transition: opacity .15s;
+  }
+  .btn-back:hover { opacity: .8; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 860px; margin: 0 auto; padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* ── CARD ── */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .card-header {
+    padding: 12px 18px; font-size: 11px; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--ing); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-body { padding: 18px; }
+
+  /* ── FORM ── */
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  .field { display: flex; flex-direction: column; }
+  label {
+    font-size: 11px; font-weight: 600; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  input[type="text"], input[type="number"] {
+    width: 100%; padding: 9px 11px; font-size: 13px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: #fff; color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: border-color .15s; outline: none;
+  }
+  input:focus { border-color: #888; }
+  input.err  { border-color: var(--err); background: var(--err-bg); }
+  .err-msg   { font-size: 11px; color: var(--err); margin-top: 4px; min-height: 14px; }
+  .hint      { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── MODO BADGE ── */
+  .modo-badge {
+    font-size: 11px; font-weight: 600; letter-spacing: .8px;
+    padding: 3px 10px; border-radius: 20px; font-family: 'IBM Plex Mono', monospace;
+    background: rgba(255,255,255,.18); color: #fff;
+  }
+  .modo-badge.mod { background: #e8ab2e; color: #3a2400; }
+
+  /* ── BUTTONS ── */
+  .btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 4px; }
+  .btn {
+    padding: 10px 14px; font-size: 13px; font-weight: 500;
+    border-radius: var(--radius); border: 1px solid var(--border);
+    cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+    transition: opacity .15s; display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+  }
+  .btn:hover  { opacity: .85; }
+  .btn:active { opacity: .7; transform: scale(.98); }
+  .btn-ing    { background: var(--ing); color: #fff; border-color: var(--ing); }
+  .btn-del    { background: #7a1a1a; color: #fff; border-color: #7a1a1a; }
+  .btn-sec    { background: #fff; color: var(--text); }
+  .btn.loading .btn-txt { display: none; }
+  .btn.loading .spinner { display: inline-block; }
+  .spinner {
+    display: none; width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+    border-radius: 50%; animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MENSAJES ── */
+  .banner {
+    display: none; border-radius: var(--radius);
+    padding: 11px 15px; margin-bottom: 14px; font-size: 13px; font-weight: 500;
+  }
+  .banner.show   { display: block; }
+  .banner.ok     { background: var(--ing-light); border: 1px solid #a8d5b5; color: var(--ing); }
+  .banner.error  { background: var(--err-bg);    border: 1px solid #f5c6c6; color: var(--err); }
+
+  /* ── BUSCADOR ── */
+  .search-wrap { position: relative; margin-bottom: 14px; }
+  .search-wrap input {
+    padding-left: 34px; background: #fafaf8;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 13px; width: 100%; outline: none; transition: border-color .15s;
+  }
+  .search-wrap input:focus { border-color: #888; background: #fff; }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
+
+  /* ── TABLA ── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600;
+    letter-spacing: .8px; text-transform: uppercase; color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace; border-bottom: 2px solid var(--border);
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }
+  thead th:hover { color: var(--text); }
+  thead th .sort-icon { margin-left: 4px; opacity: .4; }
+  thead th.sorted .sort-icon { opacity: 1; }
+  tbody tr { border-bottom: 1px solid #f0ede8; transition: background .1s; }
+  tbody tr:hover { background: #fafaf8; }
+  tbody tr.selected { background: var(--ing-light); }
+  tbody td { padding: 9px 12px; vertical-align: middle; }
+  td.interior { font-family: 'IBM Plex Mono', monospace; font-weight: 500; width: 90px; }
+  td.acciones { width: 100px; text-align: right; }
+  .btn-tbl {
+    padding: 4px 10px; font-size: 11px; font-weight: 500; border-radius: 4px;
+    border: 1px solid; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+    transition: opacity .15s; margin-left: 4px;
+  }
+  .btn-tbl:hover { opacity: .75; }
+  .btn-edit { background: #e8f0fb; color: #1a3a7a; border-color: #b0c8f0; }
+  .btn-row-del { background: var(--err-bg); color: var(--err); border-color: #f5c6c6; }
+
+  .empty-row td { text-align: center; color: var(--muted); padding: 28px; font-style: italic; }
+  .count-badge { font-size: 12px; font-family: 'IBM Plex Mono', monospace; opacity: .75; }
+
+  /* ── MODAL CONFIRMACIÓN ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 999;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 10px; padding: 28px 24px 20px;
+    width: min(360px, 92vw); box-shadow: 0 8px 32px rgba(0,0,0,.22);
+    text-align: center; font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .modal-icon  { font-size: 36px; margin-bottom: 10px; }
+  .modal-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .modal-sub   { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  .modal-btns  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-btns .btn { margin: 0; }
+
+  @media (max-width: 560px) {
+    .row-2 { grid-template-columns: 1fr; }
+    .btns  { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="site-header">
+  <h1>Comité Ornato y Seguridad · NK2 — Residentes</h1>
+  <a href="index.html" class="btn-back">← Volver</a>
+</div>
+
+<div class="container">
+
+  <!-- ═══ FORMULARIO AGREGAR / MODIFICAR ═══ -->
+  <div class="card">
+    <div class="card-header">
+      <span>Gestión de Residentes</span>
+      <span class="modo-badge" id="modo-badge">AGREGAR</span>
+    </div>
+    <div class="card-body">
+
+      <div class="banner ok"    id="banner-ok"></div>
+      <div class="banner error" id="banner-err"></div>
+
+      <div class="row-2">
+        <div class="field">
+          <label>Interior *</label>
+          <input type="text" id="f-interior" placeholder="Ej: 101" maxlength="10" oninput="onInteriorInput()">
+          <span class="hint">Número o código del apartamento</span>
+          <span class="err-msg" id="e-interior"></span>
+        </div>
+        <div class="field">
+          <label>Nombre del residente *</label>
+          <input type="text" id="f-nombre" placeholder="Ej: JUAN GARCÍA" maxlength="80">
+          <span class="err-msg" id="e-nombre"></span>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn btn-ing" id="btn-guardar" onclick="guardar()">
+          <span class="btn-txt" id="btn-guardar-txt">➕ Agregar</span>
+          <span class="spinner"></span>
+        </button>
+        <button class="btn btn-sec" onclick="limpiar()">↺ Limpiar</button>
+        <button class="btn btn-del" id="btn-eliminar" onclick="pedirConfirmacion()" disabled>
+          🗑 Eliminar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ LISTA DE RESIDENTES ═══ -->
+  <div class="card">
+    <div class="card-header">
+      <span>Lista de Residentes</span>
+      <span class="count-badge" id="count-badge">—</span>
+    </div>
+    <div class="card-body">
+
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="buscador" placeholder="Buscar por interior o nombre..." oninput="filtrar()">
+      </div>
+
+      <div class="tbl-wrap">
+        <table id="tabla-residentes">
+          <thead>
+            <tr>
+              <th onclick="ordenarPor(0)" id="th-0">Interior <span class="sort-icon">↕</span></th>
+              <th onclick="ordenarPor(1)" id="th-1">Nombre <span class="sort-icon">↕</span></th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr class="empty-row"><td colspan="3">Cargando residentes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ═══ MODAL CONFIRMACIÓN ELIMINACIÓN ═══ -->
+<div class="modal-overlay" id="modal-del">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">¿Eliminar residente?</div>
+    <div class="modal-sub" id="modal-del-sub">Esta acción no se puede deshacer.</div>
+    <div class="modal-btns">
+      <button class="btn btn-del" onclick="confirmarEliminar()">Sí, eliminar</button>
+      <button class="btn btn-sec" onclick="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// CONFIGURACIÓN API
+// ════════════════════════════════════════════
+const API_URL = localStorage.getItem('nk2_api_url') ||
+  'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+
+function apiFetch(action, params = {}) {
+  const qs = new URLSearchParams({ action, ...params });
+  return fetch(API_URL + '?' + qs).then(r => r.json());
+}
+
+// ════════════════════════════════════════════
+// ESTADO
+// ════════════════════════════════════════════
+let residentes    = [];   // todos los residentes cargados
+let filtrados     = [];   // los que se muestran (tras búsqueda)
+let modoEdicion   = false;
+let interiorOrig  = '';   // interior original al editar (para detectar cambio)
+let sortCol       = 0;
+let sortAsc       = true;
+
+// ════════════════════════════════════════════
+// CARGA INICIAL
+// ════════════════════════════════════════════
+async function cargar() {
+  try {
+    const data = await apiFetch('getHabitantes');
+    residentes = data.map(r => ({ int: String(r.int), nombre: r.nombre }));
+    ordenarDatos();
+    filtrar();
+  } catch(e) {
+    mostrarBanner('err', '⚠ Error de conexión al cargar los residentes.');
+  }
+}
+
+cargar();
+
+// ════════════════════════════════════════════
+// RENDER DE LA TABLA
+// ════════════════════════════════════════════
+function renderTabla() {
+  const tbody = document.getElementById('tbody');
+  document.getElementById('count-badge').textContent =
+    filtrados.length + ' / ' + residentes.length + ' residentes';
+
+  if (!filtrados.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="3">No se encontraron residentes</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtrados.map(r => `
+    <tr id="row-${r.int}">
+      <td class="interior">${r.int}</td>
+      <td>${r.nombre}</td>
+      <td class="acciones">
+        <button class="btn-tbl btn-edit"    onclick="cargarEnForm('${escHtml(r.int)}','${escHtml(r.nombre)}')">✏ Editar</button>
+        <button class="btn-tbl btn-row-del" onclick="pedirConfirmacionDirecta('${escHtml(r.int)}','${escHtml(r.nombre)}')">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+
+function escHtml(s) { return String(s).replace(/'/g,"&#39;").replace(/"/g,'&quot;'); }
+
+// ════════════════════════════════════════════
+// BÚSQUEDA Y ORDENAMIENTO
+// ════════════════════════════════════════════
+function filtrar() {
+  const q = document.getElementById('buscador').value.toLowerCase().trim();
+  filtrados = q
+    ? residentes.filter(r =>
+        r.int.toLowerCase().includes(q) || r.nombre.toLowerCase().includes(q))
+    : [...residentes];
+  renderTabla();
+}
+
+function ordenarPor(col) {
+  if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
+  ordenarDatos();
+  filtrar();
+  // Actualizar íconos de encabezado
+  [0,1].forEach(i => {
+    const th = document.getElementById('th-' + i);
+    th.classList.toggle('sorted', i === sortCol);
+    th.querySelector('.sort-icon').textContent = i === sortCol ? (sortAsc ? '↑' : '↓') : '↕';
+  });
+}
+
+function ordenarDatos() {
+  residentes.sort((a, b) => {
+    const va = sortCol === 0 ? padInt(a.int) : a.nombre.toLowerCase();
+    const vb = sortCol === 0 ? padInt(b.int) : b.nombre.toLowerCase();
+    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+}
+
+// Pad numérico para ordenar "2" < "10" correctamente
+function padInt(s) { return isNaN(s) ? s : String(s).padStart(6, '0'); }
+
+// ════════════════════════════════════════════
+// FORMULARIO — MODO AGREGAR / MODO EDITAR
+// ════════════════════════════════════════════
+function cargarEnForm(int, nombre) {
+  document.getElementById('f-interior').value = int;
+  document.getElementById('f-nombre').value   = nombre;
+  interiorOrig = int;
+  modoEdicion  = true;
+
+  document.getElementById('btn-guardar-txt').textContent = '💾 Guardar cambios';
+  document.getElementById('modo-badge').textContent      = 'MODIFICAR';
+  document.getElementById('modo-badge').classList.add('mod');
+  document.getElementById('btn-eliminar').disabled = false;
+
+  limpiarErrores();
+  ocultarBanners();
+  document.getElementById('f-nombre').focus();
+
+  // Resaltar fila seleccionada
+  document.querySelectorAll('#tbody tr').forEach(tr => tr.classList.remove('selected'));
+  const row = document.getElementById('row-' + int);
+  if (row) { row.classList.add('selected'); row.scrollIntoView({ block: 'nearest' }); }
+}
+
+function limpiar() {
+  document.getElementById('f-interior').value = '';
+  document.getElementById('f-nombre').value   = '';
+  interiorOrig = '';
+  modoEdicion  = false;
+
+  document.getElementById('btn-guardar-txt').textContent = '➕ Agregar';
+  document.getElementById('modo-badge').textContent      = 'AGREGAR';
+  document.getElementById('modo-badge').classList.remove('mod');
+  document.getElementById('btn-eliminar').disabled = true;
+
+  document.querySelectorAll('#tbody tr').forEach(tr => tr.classList.remove('selected'));
+  limpiarErrores();
+  ocultarBanners();
+  document.getElementById('f-interior').focus();
+}
+
+function onInteriorInput() {
+  // Al editar el campo interior en modo agregar, salir de modo edición
+  if (modoEdicion && document.getElementById('f-interior').value !== interiorOrig) {
+    // No hacer nada — se permite cambiar el interior en edición
+  }
+}
+
+// ════════════════════════════════════════════
+// GUARDAR (AGREGAR O MODIFICAR)
+// ════════════════════════════════════════════
+async function guardar() {
+  limpiarErrores();
+  const interior = document.getElementById('f-interior').value.trim().toUpperCase();
+  const nombre   = document.getElementById('f-nombre').value.trim().toUpperCase();
+
+  let ok = true;
+  if (!interior) { markErr('f-interior', 'e-interior', 'Campo requerido'); ok = false; }
+  if (!nombre)   { markErr('f-nombre',   'e-nombre',   'Campo requerido'); ok = false; }
+  if (!ok) return;
+
+  // Validar duplicado en cliente (antes de ir al servidor)
+  const duplicado = residentes.find(r =>
+    r.int === interior && (!modoEdicion || r.int !== interiorOrig));
+  if (duplicado) {
+    markErr('f-interior', 'e-interior', 'El interior ' + interior + ' ya está registrado');
+    return;
+  }
+
+  setBtnLoading('btn-guardar', true);
+  ocultarBanners();
+
+  const params = {
+    interior,
+    nombre,
+    modo: modoEdicion ? 'edit' : 'add',
+    oldInterior: modoEdicion ? interiorOrig : ''
+  };
+
+  try {
+    const res = await apiFetch('saveHabitante', params);
+    if (res.ok) {
+      mostrarBanner('ok', '✅ ' + res.mensaje);
+      await cargar();
+      limpiar();
+    } else {
+      mostrarBanner('err', '⚠ ' + res.error);
+    }
+  } catch(e) {
+    mostrarBanner('err', '⚠ Error de conexión. Intenta de nuevo.');
+  }
+
+  setBtnLoading('btn-guardar', false);
+}
+
+// ════════════════════════════════════════════
+// ELIMINAR
+// ════════════════════════════════════════════
+let interiorAEliminar = '';
+
+function pedirConfirmacion() {
+  // Llamado desde el botón principal Eliminar (modo edición)
+  const int    = document.getElementById('f-interior').value.trim().toUpperCase();
+  const nombre = document.getElementById('f-nombre').value.trim();
+  if (!int) return;
+  abrirModalEliminar(int, nombre);
+}
+
+function pedirConfirmacionDirecta(int, nombre) {
+  // Llamado desde el botón 🗑 de cada fila
+  abrirModalEliminar(int, nombre);
+}
+
+function abrirModalEliminar(int, nombre) {
+  interiorAEliminar = int;
+  document.getElementById('modal-del-sub').innerHTML =
+    'Interior: <strong>' + int + '</strong><br>' +
+    'Nombre: <strong>' + nombre + '</strong><br><br>' +
+    'Esta acción no se puede deshacer.';
+  document.getElementById('modal-del').classList.add('show');
+}
+
+function cerrarModal() {
+  document.getElementById('modal-del').classList.remove('show');
+  interiorAEliminar = '';
+}
+
+async function confirmarEliminar() {
+  cerrarModal();
+  if (!interiorAEliminar) return;
+
+  ocultarBanners();
+  try {
+    const res = await apiFetch('deleteHabitante', { interior: interiorAEliminar });
+    if (res.ok) {
+      mostrarBanner('ok', '✅ ' + res.mensaje);
+      await cargar();
+      limpiar();
+    } else {
+      mostrarBanner('err', '⚠ ' + res.error);
+    }
+  } catch(e) {
+    mostrarBanner('err', '⚠ Error de conexión al eliminar.');
+  }
+}
+
+// Cerrar modal al clic en fondo oscuro
+document.getElementById('modal-del').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
+
+// ════════════════════════════════════════════
+// UTILIDADES
+// ════════════════════════════════════════════
+function markErr(inputId, errId, msg) {
+  document.getElementById(inputId).classList.add('err');
+  document.getElementById(errId).textContent = msg;
+}
+function limpiarErrores() {
+  ['f-interior','f-nombre'].forEach(id => document.getElementById(id).classList.remove('err'));
+  ['e-interior','e-nombre'].forEach(id => document.getElementById(id).textContent = '');
+}
+function mostrarBanner(tipo, msg) {
+  ocultarBanners();
+  const el = document.getElementById('banner-' + tipo);
+  el.textContent = msg;
+  el.classList.add('show');
+  if (tipo === 'ok') setTimeout(() => el.classList.remove('show'), 4000);
+}
+function ocultarBanners() {
+  document.getElementById('banner-ok').classList.remove('show');
+  document.getElementById('banner-err').classList.remove('show');
+}
+function setBtnLoading(id, state) {
+  document.getElementById(id).classList.toggle('loading', state);
+}
+</script>
+</body>
+</html>

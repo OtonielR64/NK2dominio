@@ -22,6 +22,8 @@ function handleRequest(e) {
     else if (action === 'regularizarMonedas')  result = regularizarMonedas();
     else if (action === 'getAbonos')           result = getAbonos(e.parameter);
     else if (action === 'saveAbono')           result = saveAbono(e.parameter);
+    else if (action === 'saveHabitante')       result = saveHabitante(e.parameter);
+    else if (action === 'deleteHabitante')     result = deleteHabitante(e.parameter);
     else result = { error: 'Acción no reconocida' };
   } catch(err) {
     result = { error: err.message };
@@ -35,6 +37,63 @@ function getHabitantes() {
   const data = SpreadsheetApp.getActiveSpreadsheet()
     .getSheetByName('HABITANTES').getDataRange().getValues();
   return data.slice(1).map(r => ({ int: String(r[0]), nombre: r[1] }));
+}
+
+// ─── Guardar residente: agrega (modo='add') o modifica (modo='edit') ───
+function saveHabitante(p) {
+  const ss      = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet   = ss.getSheetByName('HABITANTES');
+  const interior = String(p.interior).trim();
+  const nombre   = String(p.nombre).trim();
+  const modo     = p.modo; // 'add' | 'edit'
+  const oldInt   = String(p.oldInterior || '').trim();
+
+  // Buscar duplicados (excluye la fila que se está editando)
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    const intFila = String(data[i][0]).trim();
+    if (intFila === interior && (modo === 'add' || intFila !== oldInt)) {
+      return { ok: false, error: 'El interior ' + interior + ' ya está registrado.' };
+    }
+  }
+
+  if (modo === 'add') {
+    sheet.appendRow([interior, nombre]);
+  } else {
+    // Buscar la fila por oldInterior y actualizar
+    let filaEncontrada = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === oldInt) { filaEncontrada = i + 1; break; }
+    }
+    if (filaEncontrada < 0) return { ok: false, error: 'Registro no encontrado.' };
+    sheet.getRange(filaEncontrada, 1).setValue(interior);
+    sheet.getRange(filaEncontrada, 2).setValue(nombre);
+  }
+
+  // Ordenar por columna A (Interior) ascendente
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 2) {
+    sheet.getRange(2, 1, lastRow - 1, 2).sort({ column: 1, ascending: true });
+  }
+
+  return { ok: true, mensaje: modo === 'add'
+    ? 'Residente ' + interior + ' agregado correctamente.'
+    : 'Residente ' + interior + ' modificado correctamente.' };
+}
+
+// ─── Eliminar residente por Interior ───────────────────────────────────
+function deleteHabitante(p) {
+  const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('HABITANTES');
+  const interior = String(p.interior).trim();
+  const data    = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === interior) {
+      sheet.deleteRow(i + 1);
+      return { ok: true, mensaje: 'Interior ' + interior + ' eliminado correctamente.' };
+    }
+  }
+  return { ok: false, error: 'Interior ' + interior + ' no encontrado.' };
 }
 
 function getPersonal() {
