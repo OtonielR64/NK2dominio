@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="version" content="2.1-thermal-receipt">
+<meta name="version" content="2.2-escpos-qztray">
 <script>if(localStorage.getItem('nk2_role')!=='admin')location.replace('login.html?next='+encodeURIComponent(location.href));</script>
 <title>Recaudos NK2 — Comité Ornato y Seguridad</title>
 <style>
@@ -316,6 +316,8 @@
     .site-header span { display: none; }
   }
 </style>
+<!-- QZ Tray — puente de impresión ESC/POS RAW (requiere app instalada en el PC) -->
+<script src="https://unpkg.com/qz-tray@2.2.4/qz-tray.js" async></script>
 </head>
 <body>
 
@@ -631,6 +633,7 @@ let API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/
 
 // ═══════════════════════════════════════
 // IMPRESIÓN DE RECIBO — TÉRMICA 58 mm
+// QZ Tray ESC/POS RAW  +  fallback HTML
 // ═══════════════════════════════════════
 let ultimoRecibo = null;
 
@@ -641,7 +644,6 @@ function modalConfirmarImpresion() {
   modalCerrar();
   imprimirRecibo(ultimoRecibo);
 }
-// Cerrar el modal al hacer clic en el fondo oscuro
 document.getElementById('modal-imprimir').addEventListener('click', function(e) {
   if (e.target === this) modalCerrar();
 });
@@ -654,115 +656,236 @@ function imprimirUltimoRecibo() {
   imprimirRecibo(ultimoRecibo);
 }
 
-function imprimirRecibo(d) {
-  /* ── helpers ── */
+/* ═════════════════════════════════════════════════════════════════
+   ESC/POS RAW — replica exactamente ModImprimirTermico.bas (VBA)
+   ANCHO = 32 caracteres por línea a 58 mm  ·  CP1252
+   ═════════════════════════════════════════════════════════════════ */
+function escposTicket(d) {
+  const ANCHO = 32;
+  const bytes = [];
+
+  // Apilar bytes crudos
+  const b  = (...v) => bytes.push(...v);
+  // Escribir string Latin-1 + LF
+  const txt = s => {
+    for (let i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i) & 0xFF);
+    bytes.push(0x0A);
+  };
+  // Separador de guiones
+  const sep = () => txt('-'.repeat(ANCHO));
+  // Label izq + valor der = exactamente ANCHO chars (igual que IzqDer VBA)
+  const izqDer = (izq, der) => {
+    izq = String(izq); der = String(der);
+    const sp = Math.max(1, ANCHO - izq.length - der.length);
+    return izq + ' '.repeat(sp) + der;
+  };
+  // Moneda colombiana
+  const cop = n => '$ ' + Math.round(n).toLocaleString('es-CO');
+
+  // Fecha ISO → dd/mm/yyyy
+  const [yr, mo, dy] = d.fecha.split('-');
+  const fechaStr = dy + '/' + mo + '/' + yr;
+  const cant = parseInt(d.cantidad) || 1;
+
+  // ── INIT ──────────────────────────────
+  b(0x1B, 0x40);               // ESC @ — inicializar
+  b(0x1B, 0x74, 0x10);         // ESC t 16 — codepage WPC1252
+
+  // ── CABECERA — centrada, negrita, doble alto ──
+  b(0x1B, 0x61, 0x01);         // ESC a 1 — centrar
+  b(0x1B, 0x45, 0x01);         // ESC E 1 — negrita ON
+  b(0x1B, 0x21, 0x10);         // ESC ! 16 — doble alto
+  txt('COMITE ORNATO Y SEG.');
+  b(0x1B, 0x21, 0x00);         // tamaño normal
+  b(0x1B, 0x45, 0x00);         // negrita OFF
+  txt('Nuevo Kennedy II - Sector 2');
+  b(0x1B, 0x61, 0x00);         // ESC a 0 — alinear izquierda
+
+  // ── N° RECIBO / FECHA ──
+  sep();
+  txt(izqDer('Recibo N:', String(d.factura)));
+  txt(izqDer('Fecha:', fechaStr));
+
+  // ── INTERIOR / RESIDENTE ──
+  sep();
+  txt(izqDer('Interior:', String(d.interior)));
+  txt('Residente:');
+  txt('  ' + String(d.nombre || '-').substring(0, ANCHO - 2));
+
+  // ── CONCEPTO ──
+  sep();
+  txt('Concepto:');
+  const conc = String(d.concepto || '');
+  txt('  ' + conc.substring(0, ANCHO - 2));
+  if (conc.length > ANCHO - 2) txt('  ' + conc.substring(ANCHO - 2, (ANCHO - 2) * 2));
+  txt(izqDer('Mes de pago:', String(d.mes_pago)));
+  txt(izqDer('Cantidad:', cant + (cant === 1 ? ' mes' : ' meses')));
+
+  // ── VALORES ──
+  sep();
+  if (d.vlr_admon    > 0) txt(izqDer('Admon:', cop(d.vlr_admon)));
+  if (d.vlr_vehiculo > 0) txt(izqDer('Vehiculo(s):', cop(d.vlr_vehiculo)));
+
+  // ── TOTAL — negrita + doble alto ──
+  sep();
+  b(0x1B, 0x45, 0x01);
+  b(0x1B, 0x21, 0x10);
+  txt(izqDer('TOTAL PAGADO:', cop(d.total)));
+  b(0x1B, 0x21, 0x00);
+  b(0x1B, 0x45, 0x00);
+
+  // ── OBSERVACIÓN / ADMINISTRADOR ──
+  sep();
+  if (d.observacion) {
+    const obs = String(d.observacion);
+    txt(('Obs: ' + obs).substring(0, ANCHO));
+    if (obs.length > ANCHO - 5)
+      txt(('     ' + obs.substring(ANCHO - 5)).substring(0, ANCHO));
+  }
+  txt(izqDer('Recibido por:', String(d.administrador || '').substring(0, ANCHO - 14)));
+  sep();
+
+  // ── PIE — centrado ──
+  b(0x1B, 0x61, 0x01);
+  txt('!Gracias por su pago puntual!');
+  txt('Conserve este recibo');
+  b(0x1B, 0x61, 0x00);
+
+  // ── AVANCE 5 LÍNEAS + CORTE TOTAL ──
+  b(0x1B, 0x64, 0x05);         // ESC d 5
+  b(0x1D, 0x56, 0x00);         // GS V 0
+
+  // Bytes → base64
+  const ua = new Uint8Array(bytes);
+  let bin = '';
+  for (let i = 0; i < ua.length; i++) bin += String.fromCharCode(ua[i]);
+  return btoa(bin);
+}
+
+/* Conecta QZ Tray y envía ESC/POS RAW a la impresora térmica */
+async function imprimirEscPos(d) {
+  if (!qz.websocket.isActive()) {
+    await qz.websocket.connect({ retries: 2, delay: 0.5 });
+  }
+
+  // Buscar impresora "Generic / Text Only" (la que usa el Excel)
+  let printer = null;
+  try {
+    const found = await qz.printers.find('Generic');
+    printer = Array.isArray(found) ? found[0] : found;
+  } catch (_) {}
+
+  if (!printer) {
+    // Fallback: listar todas y buscar térmica por nombre
+    const all = await qz.printers.find();
+    const list = Array.isArray(all) ? all : [all];
+    printer = list.find(p => /generic|text only|pos|58mm|thermal|receipt/i.test(p))
+              || list[0];
+  }
+
+  if (!printer) throw new Error('No se encontró ninguna impresora instalada');
+
+  const cfg = qz.configs.create(printer);
+  await qz.print(cfg, [{ type: 'raw', format: 'base64', data: escposTicket(d) }]);
+}
+
+/* Impresión principal:
+   1. Intenta ESC/POS RAW vía QZ Tray  → idéntico al Excel/VBA
+   2. Si QZ Tray no corre, ofrece instalar o usar popup HTML */
+async function imprimirRecibo(d) {
+  if (typeof qz !== 'undefined') {
+    try {
+      await imprimirEscPos(d);
+      return;
+    } catch (err) {
+      const msg = (err.message || String(err)).toLowerCase();
+      if (/connect|socket|refused|timed|unavailable/i.test(msg)) {
+        const usar = confirm(
+          '⚠ QZ Tray no está activo en este equipo.\n\n' +
+          'Para imprimir igual que en Excel necesitas:\n' +
+          '  1. Descargar e instalar QZ Tray desde  qz.io\n' +
+          '  2. Ejecutarlo en segundo plano (icono en la barra)\n' +
+          '  3. En Chrome, abrir  https://localhost:8181/\n' +
+          '     y aceptar el certificado una sola vez.\n\n' +
+          '¿Imprimir de todas formas con vista previa HTML?'
+        );
+        if (!usar) return;
+      } else {
+        console.warn('QZ Tray error:', err.message || err);
+      }
+    }
+  }
+  imprimirReciboHTML(d);
+}
+
+/* Fallback — popup HTML para cuando QZ Tray no está disponible */
+function imprimirReciboHTML(d) {
   const cop  = n => '$ ' + Math.round(n).toLocaleString('es-CO');
   const sep  = `<tr><td colspan="2"><div class="sep"></div></td></tr>`;
-  // Fila dos columnas usando <table> (NO flexbox — funciona en térmica)
   const fila = (lbl, val) =>
     `<tr><td class="lbl">${lbl}</td><td class="val">${val}</td></tr>`;
 
-  // Fecha ISO "yyyy-mm-dd" → "dd/mm/yyyy"
-  const [, mm, dd] = d.fecha.split('-');
-  const fechaStr = `${dd}/${mm}/${d.fecha.split('-')[0]}`;
-
+  const [yr2, mm, dd] = d.fecha.split('-');
+  const fechaStr = `${dd}/${mm}/${yr2}`;
   const meses = parseInt(d.cantidad) || 1;
 
-  /* ── HTML calibrado para POS-5890K / 58 mm ── */
   const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <title>Recibo ${d.factura}</title>
 <style>
-  /* ── Tamaño de página: 58 mm ancho, alto automático ── */
-  @page {
-    size: 58mm auto;
-    margin: 2mm 3mm;
-  }
-  /* Forzar ancho máximo en pantalla Y en impresión */
-  html, body {
-    width: 52mm;
-    max-width: 52mm;
-  }
+  @page { size: 58mm auto; margin: 2mm 3mm; }
+  html, body { width: 52mm; max-width: 52mm; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 8pt;
-    color: #000;
-    background: #fff;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    line-height: 1.35;
-  }
-  /* Tabla base — reemplaza flexbox por completo */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-  }
-  /* Columna etiqueta: 56% — columna valor: 44% alineada a la derecha */
+  body { font-family:'Courier New',Courier,monospace; font-size:8pt; color:#000;
+         background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact;
+         line-height:1.35; }
+  table { width:100%; border-collapse:collapse; table-layout:fixed; }
   .lbl { width:56%; font-size:7.5pt; color:#444; padding:0.6mm 0; vertical-align:top; word-break:break-word; }
   .val { width:44%; text-align:right; padding:0.6mm 0; vertical-align:top; font-weight:600; word-break:break-word; }
-  /* Separador punteado */
   .sep { border-top:1px dashed #666; margin:1.8mm 0; }
-  /* Centrado */
-  .c { text-align:center; display:block; }
-  /* Total grande */
+  .c   { text-align:center; display:block; }
   .big-lbl { width:56%; font-size:9.5pt; font-weight:bold; padding:1mm 0; vertical-align:middle; }
   .big-val { width:44%; font-size:9.5pt; font-weight:bold; text-align:right; padding:1mm 0; vertical-align:middle; }
-  /* Espacio de corte al final */
   .tail { height:10mm; }
 </style>
 </head>
 <body>
-
-<span class="c" style="font-size:9pt;font-weight:bold;letter-spacing:.3px">COMITÉ ORNATO Y SEG.</span>
+<span class="c" style="font-size:9pt;font-weight:bold">COMITÉ ORNATO Y SEG.</span>
 <span class="c" style="font-size:7.5pt;color:#444">Nuevo Kennedy II — Sector 2</span>
-
 <table><tbody>
   ${sep}
-  ${fila('Recibo N°:', '<strong>' + d.factura + '</strong>')}
-  ${fila('Fecha:', fechaStr)}
+  ${fila('Recibo N°:','<strong>'+d.factura+'</strong>')}
+  ${fila('Fecha:',fechaStr)}
   ${sep}
-  ${fila('Interior:', '<strong>' + d.interior + '</strong>')}
+  ${fila('Interior:','<strong>'+d.interior+'</strong>')}
 </tbody></table>
-
 <span style="font-size:7.5pt;color:#444;display:block">Residente:</span>
-<span style="font-weight:bold;font-size:8pt;display:block;margin-left:2mm;margin-bottom:1mm">${d.nombre || '—'}</span>
-
+<span style="font-weight:bold;font-size:8pt;display:block;margin-left:2mm;margin-bottom:1mm">${d.nombre||'—'}</span>
 <table><tbody>
   ${sep}
   <tr><td colspan="2" style="font-size:7.5pt;color:#444;padding-bottom:0.5mm">Concepto:</td></tr>
   <tr><td colspan="2" style="font-size:7.5pt;padding-left:2mm;padding-bottom:0.8mm">${d.concepto}</td></tr>
-  ${fila('Mes de pago:', d.mes_pago)}
-  ${fila('Cantidad:', meses + (meses === 1 ? ' mes' : ' meses'))}
+  ${fila('Mes de pago:',d.mes_pago)}
+  ${fila('Cantidad:',meses+(meses===1?' mes':' meses'))}
   ${sep}
-  ${d.vlr_admon    > 0 ? fila('Admón:', cop(d.vlr_admon))       : ''}
-  ${d.vlr_vehiculo > 0 ? fila('Vehículo(s):', cop(d.vlr_vehiculo)) : ''}
+  ${d.vlr_admon    > 0 ? fila('Admón:',cop(d.vlr_admon))         : ''}
+  ${d.vlr_vehiculo > 0 ? fila('Vehículo(s):',cop(d.vlr_vehiculo)): ''}
   ${sep}
-  <tr>
-    <td class="big-lbl">TOTAL PAGADO:</td>
-    <td class="big-val">${cop(d.total)}</td>
-  </tr>
+  <tr><td class="big-lbl">TOTAL PAGADO:</td><td class="big-val">${cop(d.total)}</td></tr>
   ${sep}
   ${d.observacion ? `<tr><td colspan="2" style="font-size:7.5pt;padding-bottom:0.5mm"><span style="color:#444">Obs: </span>${d.observacion}</td></tr>` : ''}
-  ${fila('<span style="color:#444">Recibido por:</span>', d.administrador)}
+  ${fila('<span style="color:#444">Recibido por:</span>',d.administrador)}
   ${sep}
 </tbody></table>
-
 <span class="c" style="font-size:7pt;margin-top:1.5mm;display:block">¡Gracias por su pago puntual!</span>
 <span class="c" style="font-size:7pt;display:block">Conserve este recibo</span>
-
 <div class="tail"></div>
-</body>
-</html>`;
+</body></html>`;
 
-  /* ── Abrir ventana de previsualización e imprimir ── */
-  const w = window.open(
-    '', '_blank',
-    'width=260,height=560,toolbar=0,menubar=0,location=0,status=0,scrollbars=1,resizable=1'
-  );
+  const w = window.open('','_blank',
+    'width=260,height=560,toolbar=0,menubar=0,location=0,status=0,scrollbars=1,resizable=1');
   if (!w) {
     alert('⚠ Permite las ventanas emergentes en este sitio para imprimir el recibo.');
     return;
