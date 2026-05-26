@@ -162,6 +162,7 @@
         <button class="btn btn-print" onclick="window.print()">🖨 Imprimir</button>
         <button class="btn btn-excel" onclick="exportarExcel()">↓ Excel</button>
       </div>
+      <p id="lbl-fecha-ref" style="margin-top:14px;font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',monospace"></p>
     </div>
   </div>
 
@@ -193,6 +194,8 @@
 <script>
 const API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
 localStorage.setItem('nk2_api_url', API_URL);
+// Mostrar fecha de corte al cargar la página
+document.getElementById('lbl-fecha-ref').textContent = `📅 Fecha de corte: ${mesRefStr()}`;
 function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
 if (localStorage.getItem('nk2_role') === 'visor') {
   const lnk = document.getElementById('lnk-volver');
@@ -239,18 +242,30 @@ function mesStrADate(mesStr) {
   return null;
 }
 
-function diffMeses(fecha) {
-  // Compara la fecha del último MES_PAGO contra HOY
-  // Retorna cuántos meses han pasado desde ese pago hasta hoy
-  if (!fecha) return 9999;
+// Referencia: día 30 del mes inmediatamente anterior
+// Ej.: si estamos en mayo-2026 → referencia = abril-2026
+function mesRef() {
   const hoy = new Date();
-  const hoyAnio = hoy.getFullYear();
-  const hoyMes  = hoy.getMonth(); // 0-based
+  let yr = hoy.getFullYear();
+  let mo = hoy.getMonth() - 1; // mes anterior, 0-based
+  if (mo < 0) { mo = 11; yr--; }
+  return { yr, mo };
+}
+
+function mesRefStr() {
+  const { yr, mo } = mesRef();
+  const nombres = ['enero','febrero','marzo','abril','mayo','junio',
+                   'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return '30 de ' + nombres[mo] + ' de ' + yr;
+}
+
+function diffMeses(fecha) {
+  // Compara el último MES_PAGO contra el día 30 del mes anterior (no contra hoy)
+  if (!fecha) return 9999;
+  const { yr: refAnio, mo: refMes } = mesRef();
   const pagoAnio = fecha.getFullYear();
   const pagoMes  = fecha.getMonth(); // 0-based
-  // Diferencia en meses exactos
-  const diff = (hoyAnio - pagoAnio) * 12 + (hoyMes - pagoMes);
-  return diff;
+  return (refAnio - pagoAnio) * 12 + (refMes - pagoMes);
 }
 
 function fmtFecha(d) {
@@ -354,7 +369,8 @@ async function buscar() {
   cont.className = resultados.length > 0 ? 'contador-rojo' : 'contador-verde';
 
   const tipoLbl = tipo === 'admon' ? 'Solo Admón' : tipo === 'vehiculo' ? 'Solo Vehículo' : 'Admón + Vehículo';
-  document.getElementById('lbl-filtro').textContent = `Mínimo ${minMeses} mes(es) · ${tipoLbl}`;
+  document.getElementById('lbl-filtro').textContent = `Mínimo ${minMeses} mes(es) · ${tipoLbl} · Al ${mesRefStr()}`;
+  document.getElementById('lbl-fecha-ref').textContent = `📅 Fecha de corte: ${mesRefStr()}`;
 
   if (!resultados.length) {
     document.getElementById('tbody-morosos').innerHTML =
