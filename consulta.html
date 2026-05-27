@@ -364,7 +364,7 @@
 <script>
 let API_URL = localStorage.getItem('nk2_api_url') || 'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
 localStorage.setItem('nk2_api_url', API_URL);
-function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
+function cerrarSesion() { ['nk2_role','nk2_interior','nk2_nombre'].forEach(k => localStorage.removeItem(k)); location.replace('login.html'); }
 let datosIng = [], datosSal = [];
 let pendingDelete = null;
 

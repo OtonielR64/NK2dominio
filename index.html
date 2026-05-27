@@ -897,7 +897,7 @@ function imprimirReciboHTML(d) {
   setTimeout(() => w.print(), 500);
 }
 localStorage.setItem('nk2_api_url', API_URL);
-function cerrarSesion() { localStorage.removeItem('nk2_role'); location.replace('login.html'); }
+function cerrarSesion() { ['nk2_role','nk2_interior','nk2_nombre'].forEach(k => localStorage.removeItem(k)); location.replace('login.html'); }
 let habitantes = [];
 let personal = [];
 
