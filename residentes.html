@@ -552,12 +552,13 @@ function cerrarModal() {
 }
 
 async function confirmarEliminar() {
+  const interior = interiorAEliminar; // guardar antes de que cerrarModal lo borre
   cerrarModal();
-  if (!interiorAEliminar) return;
+  if (!interior) return;
 
   ocultarBanners();
   try {
-    const res = await apiFetch('deleteHabitante', { interior: interiorAEliminar });
+    const res = await apiFetch('deleteHabitante', { interior });
     if (res.ok) {
       mostrarBanner('ok', '✅ ' + res.mensaje);
       await cargar();
