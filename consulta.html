@@ -682,5 +682,23 @@ function cerrarModal(id) { document.getElementById(id).classList.remove('show');
 document.getElementById('modal-ing').addEventListener('click', e => { if(e.target === e.currentTarget) cerrarModal('modal-ing'); });
 document.getElementById('modal-sal').addEventListener('click', e => { if(e.target === e.currentTarget) cerrarModal('modal-sal'); });
 </script>
+<script>
+(function(){
+  const T = 3 * 60 * 1000;
+  let t;
+  function reset() {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      localStorage.removeItem('nk2_role');
+      localStorage.removeItem('nk2_interior');
+      localStorage.removeItem('nk2_nombre');
+      location.replace('login.html');
+    }, T);
+  }
+  ['mousemove','mousedown','keydown','scroll','touchstart'].forEach(
+    e => document.addEventListener(e, reset, { passive: true }));
+  reset();
+})();
+</script>
 </body>
 </html>

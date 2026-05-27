@@ -393,5 +393,23 @@ async function cargar() {
 
 cargar();
 </script>
+<script>
+(function(){
+  const T = 3 * 60 * 1000;
+  let t;
+  function reset() {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      localStorage.removeItem('nk2_role');
+      localStorage.removeItem('nk2_interior');
+      localStorage.removeItem('nk2_nombre');
+      location.replace('login.html');
+    }, T);
+  }
+  ['mousemove','mousedown','keydown','scroll','touchstart'].forEach(
+    e => document.addEventListener(e, reset, { passive: true }));
+  reset();
+})();
+</script>
 </body>
 </html>
