@@ -24,6 +24,8 @@ function handleRequest(e) {
     else if (action === 'saveAbono')           result = saveAbono(e.parameter);
     else if (action === 'saveHabitante')       result = saveHabitante(e.parameter);
     else if (action === 'deleteHabitante')     result = deleteHabitante(e.parameter);
+    else if (action === 'getResidenteAuth')    result = getResidenteAuth(e.parameter);
+    else if (action === 'getResidenteData')    result = getResidenteData(e.parameter);
     else result = { error: 'Acción no reconocida' };
   } catch(err) {
     result = { error: err.message };
@@ -36,15 +38,25 @@ function handleRequest(e) {
 function getHabitantes() {
   const data = SpreadsheetApp.getActiveSpreadsheet()
     .getSheetByName('HABITANTES').getDataRange().getValues();
-  return data.slice(1).map(r => ({ int: String(r[0]), nombre: r[1] }));
+  // Columnas: A=Interior, B=Nombre, C=PIN
+  // hasPin: indica si el residente tiene PIN asignado (no expone el PIN)
+  return data.slice(1)
+    .filter(r => String(r[0]).trim())
+    .map(r => ({
+      int:    String(r[0]),
+      nombre: r[1],
+      hasPin: !!String(r[2] || '').trim()
+    }));
 }
 
 // ─── Guardar residente: agrega (modo='add') o modifica (modo='edit') ───
+// Columnas HABITANTES: A=Interior, B=Nombre, C=PIN
 function saveHabitante(p) {
   const ss      = SpreadsheetApp.getActiveSpreadsheet();
   const sheet   = ss.getSheetByName('HABITANTES');
   const interior = String(p.interior).trim();
   const nombre   = String(p.nombre).trim();
+  const pin      = String(p.pin || '').trim();
   const modo     = p.modo; // 'add' | 'edit'
   const oldInt   = String(p.oldInterior || '').trim();
 
@@ -58,9 +70,8 @@ function saveHabitante(p) {
   }
 
   if (modo === 'add') {
-    sheet.appendRow([interior, nombre]);
+    sheet.appendRow([interior, nombre, pin]);
   } else {
-    // Buscar la fila por oldInterior y actualizar
     let filaEncontrada = -1;
     for (let i = 1; i < data.length; i++) {
       if (String(data[i][0]).trim() === oldInt) { filaEncontrada = i + 1; break; }
@@ -68,17 +79,76 @@ function saveHabitante(p) {
     if (filaEncontrada < 0) return { ok: false, error: 'Registro no encontrado.' };
     sheet.getRange(filaEncontrada, 1).setValue(interior);
     sheet.getRange(filaEncontrada, 2).setValue(nombre);
+    // Actualiza PIN solo si se envió uno nuevo; deja el existente si viene vacío
+    if (pin) sheet.getRange(filaEncontrada, 3).setValue(pin);
   }
 
-  // Ordenar por columna A (Interior) ascendente
+  // Ordenar por columna A (Interior) ascendente — incluir col C (PIN)
   const lastRow = sheet.getLastRow();
   if (lastRow > 2) {
-    sheet.getRange(2, 1, lastRow - 1, 2).sort({ column: 1, ascending: true });
+    sheet.getRange(2, 1, lastRow - 1, 3).sort({ column: 1, ascending: true });
   }
 
   return { ok: true, mensaje: modo === 'add'
     ? 'Residente ' + interior + ' agregado correctamente.'
     : 'Residente ' + interior + ' modificado correctamente.' };
+}
+
+// ─── Autenticación de residente: verifica Interior + PIN ───────────────
+function getResidenteAuth(p) {
+  const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('HABITANTES');
+  const data    = sheet.getDataRange().getValues();
+  const interior = String(p.interior || '').trim().toUpperCase();
+  const pin      = String(p.pin || '').trim();
+
+  if (!interior || !pin)
+    return { ok: false, error: 'Interior y PIN son requeridos.' };
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim().toUpperCase() === interior) {
+      const pinGuardado = String(data[i][2] || '').trim();
+      if (!pinGuardado)
+        return { ok: false, error: 'Este interior no tiene PIN asignado. Contacta al administrador.' };
+      if (pinGuardado === pin)
+        return { ok: true, interior: String(data[i][0]).trim(), nombre: String(data[i][1]) };
+      else
+        return { ok: false, error: 'PIN incorrecto.' };
+    }
+  }
+  return { ok: false, error: 'Interior ' + interior + ' no encontrado.' };
+}
+
+// ─── Datos del residente: historial de pagos filtrado por interior ──────
+function getResidenteData(p) {
+  const interior = String(p.interior || '').trim().toUpperCase();
+  if (!interior) return { error: 'Interior requerido.' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Nombre del residente
+  const habSheet = ss.getSheetByName('HABITANTES');
+  const habData  = habSheet.getDataRange().getValues();
+  let nombre = '';
+  for (let i = 1; i < habData.length; i++) {
+    if (String(habData[i][0]).trim().toUpperCase() === interior) {
+      nombre = String(habData[i][1]);
+      break;
+    }
+  }
+
+  // Ingresos filtrados por interior
+  const sheet   = ss.getSheetByName('BD_INGRESOS');
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return { ok: true, interior, nombre, ingresos: [] };
+
+  const rawData = sheet.getRange(2, 1, lastRow - 1, 14).getValues();
+  const ingresos = rawData
+    .filter(r => String(r[2]).trim().toUpperCase() === interior && r[0] !== '')
+    .map(r => r.map(c =>
+      c instanceof Date ? Utilities.formatDate(c, 'America/Bogota', 'yyyy-MM-dd') : c
+    ));
+
+  return { ok: true, interior, nombre, ingresos };
 }
 
 // ─── Eliminar residente por Interior ───────────────────────────────────

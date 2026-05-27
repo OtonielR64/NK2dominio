@@ -225,6 +225,27 @@
         </div>
       </div>
 
+      <div class="row-2" style="margin-bottom:16px">
+        <div class="field">
+          <label>PIN de acceso</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="f-pin" placeholder="Ej: 4821" maxlength="10"
+                   style="letter-spacing:3px;font-family:'IBM Plex Mono',monospace;font-weight:600">
+            <button type="button" onclick="generarPin()"
+                    style="white-space:nowrap;padding:9px 12px;font-size:12px;font-weight:500;
+                           border:1px solid var(--border);border-radius:var(--radius);
+                           background:#fff;cursor:pointer;font-family:'IBM Plex Sans',sans-serif">
+              🎲 Generar
+            </button>
+          </div>
+          <span class="hint">El residente usará este PIN para ver sus pagos. Déjalo vacío para no cambiar el PIN actual al editar.</span>
+          <span class="err-msg" id="e-pin"></span>
+        </div>
+        <div class="field" style="justify-content:center;align-items:flex-start;padding-top:22px">
+          <div id="pin-status" style="font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',monospace"></div>
+        </div>
+      </div>
+
       <div class="btns">
         <button class="btn btn-ing" id="btn-guardar" onclick="guardar()">
           <span class="btn-txt" id="btn-guardar-txt">➕ Agregar</span>
@@ -258,6 +279,7 @@
             <tr>
               <th onclick="ordenarPor(0)" id="th-0">Interior <span class="sort-icon">↕</span></th>
               <th onclick="ordenarPor(1)" id="th-1">Nombre <span class="sort-icon">↕</span></th>
+              <th>PIN</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -313,7 +335,7 @@ let sortAsc       = true;
 async function cargar() {
   try {
     const data = await apiFetch('getHabitantes');
-    residentes = data.map(r => ({ int: String(r.int), nombre: r.nombre }));
+    residentes = data.map(r => ({ int: String(r.int), nombre: r.nombre, hasPin: !!r.hasPin }));
     ordenarDatos();
     filtrar();
   } catch(e) {
@@ -340,8 +362,13 @@ function renderTabla() {
     <tr id="row-${r.int}">
       <td class="interior">${r.int}</td>
       <td>${r.nombre}</td>
+      <td style="text-align:center">
+        ${r.hasPin
+          ? '<span style="color:#1a5c2a;font-size:12px">✅ Asignado</span>'
+          : '<span style="color:#854f0b;font-size:12px">⚠ Sin PIN</span>'}
+      </td>
       <td class="acciones">
-        <button class="btn-tbl btn-edit"    onclick="cargarEnForm('${escHtml(r.int)}','${escHtml(r.nombre)}')">✏ Editar</button>
+        <button class="btn-tbl btn-edit"    onclick="cargarEnForm('${escHtml(r.int)}','${escHtml(r.nombre)}',${r.hasPin})">✏ Editar</button>
         <button class="btn-tbl btn-row-del" onclick="pedirConfirmacionDirecta('${escHtml(r.int)}','${escHtml(r.nombre)}')">🗑</button>
       </td>
     </tr>`).join('');
@@ -387,9 +414,12 @@ function padInt(s) { return isNaN(s) ? s : String(s).padStart(6, '0'); }
 // ════════════════════════════════════════════
 // FORMULARIO — MODO AGREGAR / MODO EDITAR
 // ════════════════════════════════════════════
-function cargarEnForm(int, nombre) {
+function cargarEnForm(int, nombre, hasPin) {
   document.getElementById('f-interior').value = int;
   document.getElementById('f-nombre').value   = nombre;
+  document.getElementById('f-pin').value      = '';  // nunca pre-llenar el PIN
+  document.getElementById('pin-status').textContent =
+    hasPin ? '🔑 Ya tiene PIN asignado' : '⚠ Aún sin PIN';
   interiorOrig = int;
   modoEdicion  = true;
 
@@ -411,6 +441,8 @@ function cargarEnForm(int, nombre) {
 function limpiar() {
   document.getElementById('f-interior').value = '';
   document.getElementById('f-nombre').value   = '';
+  document.getElementById('f-pin').value      = '';
+  document.getElementById('pin-status').textContent = '';
   interiorOrig = '';
   modoEdicion  = false;
 
@@ -423,6 +455,12 @@ function limpiar() {
   limpiarErrores();
   ocultarBanners();
   document.getElementById('f-interior').focus();
+}
+
+function generarPin() {
+  // Genera un PIN numérico de 4 dígitos aleatorio
+  const pin = String(Math.floor(1000 + Math.random() * 9000));
+  document.getElementById('f-pin').value = pin;
 }
 
 function onInteriorInput() {
@@ -456,9 +494,11 @@ async function guardar() {
   setBtnLoading('btn-guardar', true);
   ocultarBanners();
 
+  const pin = document.getElementById('f-pin').value.trim();
   const params = {
     interior,
     nombre,
+    pin,
     modo: modoEdicion ? 'edit' : 'add',
     oldInterior: modoEdicion ? interiorOrig : ''
   };

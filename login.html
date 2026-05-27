@@ -9,7 +9,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'IBM Plex Sans', sans-serif;
-    background: #f4f3f0;
+    background: #c8c5bf;
     color: #1a1a18;
     min-height: 100vh;
     display: flex;
@@ -18,163 +18,159 @@
     justify-content: center;
     padding: 24px;
   }
+  .logo-wrap { margin-bottom: 16px; text-align: center; }
+  .logo-wrap img { height: 56px; width: auto; object-fit: contain;
+                   border-radius: 6px; display: block; margin: 0 auto 8px; }
+  .logo-wrap span { font-size: 11px; color: #888; font-family: 'IBM Plex Mono', monospace;
+                    letter-spacing: 1px; }
   .card {
-    background: #fff;
-    border: 1px solid #dddbd6;
-    border-radius: 6px;
+    background: #e0e0e0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
     width: 100%;
-    max-width: 360px;
+    max-width: 380px;
     overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,.15);
   }
-  .card-header {
-    background: #1a1a18;
-    color: #fff;
-    padding: 16px 20px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
+  /* TABS */
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; background: #1a1a18; }
+  .tab-btn {
+    padding: 12px; font-size: 12px; font-weight: 500; border: none;
+    background: none; color: #888; cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif; letter-spacing: .3px;
+    border-bottom: 2px solid transparent; transition: all .15s;
   }
-  .card-header span {
-    display: block;
-    color: #888;
-    font-size: 10px;
-    margin-top: 4px;
-    letter-spacing: 1px;
-  }
-  .card-body { padding: 24px 20px; }
+  .tab-btn.active { color: #fff; border-bottom-color: #1a5c2a; }
+  .tab-btn:hover:not(.active) { color: #bbb; }
+
+  .panel { display: none; padding: 24px 22px; }
+  .panel.active { display: block; }
+
   label {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .8px;
-    text-transform: uppercase;
-    color: #6b6b66;
-    margin-bottom: 6px;
-    font-family: 'IBM Plex Mono', monospace;
+    display: block; font-size: 11px; font-weight: 600;
+    letter-spacing: .8px; text-transform: uppercase; color: #6b6b66;
+    margin-bottom: 6px; font-family: 'IBM Plex Mono', monospace;
   }
-  input[type="password"] {
-    width: 100%;
-    padding: 10px 12px;
-    font-size: 14px;
-    border: 1px solid #dddbd6;
-    border-radius: 6px;
-    background: #fff;
-    color: #1a1a18;
+  input[type="password"], input[type="text"], input[type="number"] {
+    width: 100%; padding: 10px 12px; font-size: 14px;
+    border: 1px solid #ccc; border-radius: 6px;
+    background: #fff; color: #1a1a18;
     font-family: 'IBM Plex Sans', sans-serif;
-    outline: none;
-    transition: border-color .15s;
+    outline: none; transition: border-color .15s;
+    margin-bottom: 14px;
   }
-  input[type="password"]:focus { border-color: #999; }
-  input[type="password"].err { border-color: #c0392b; background: #fdf3f2; }
-  .err-msg {
-    font-size: 11px;
-    color: #c0392b;
-    margin-top: 5px;
-    min-height: 16px;
-    display: none;
-  }
+  input:focus { border-color: #888; }
+  input.err   { border-color: #c0392b; background: #fdf3f2; margin-bottom: 2px; }
+  .err-msg { font-size: 11px; color: #c0392b; min-height: 16px; margin-bottom: 10px; display: none; }
   .err-msg.show { display: block; }
   .btn-login {
-    width: 100%;
-    margin-top: 18px;
-    padding: 11px;
-    background: #1a5c2a;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: 'IBM Plex Sans', sans-serif;
-    transition: opacity .15s;
+    width: 100%; padding: 11px; border: none; border-radius: 6px;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif; transition: opacity .15s;
   }
   .btn-login:hover { opacity: .85; }
-  .btn-login:active { opacity: .7; }
+  .btn-comite   { background: #1a5c2a; color: #fff; }
+  .btn-residente { background: #2c5f8a; color: #fff; }
+  .btn-login.loading { opacity: .7; cursor: not-allowed; }
+
   .roles-info {
-    margin-top: 18px;
-    border-top: 1px solid #f0ede8;
-    padding-top: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    margin-top: 16px; border-top: 1px solid #ccc;
+    padding-top: 12px; display: flex; flex-direction: column; gap: 5px;
   }
-  .role-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    color: #6b6b66;
-    font-family: 'IBM Plex Mono', monospace;
-  }
-  .role-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  .role-chip { display: flex; align-items: center; gap: 8px; font-size: 11px;
+               color: #6b6b66; font-family: 'IBM Plex Mono', monospace; }
+  .role-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .dot-admin { background: #1a5c2a; }
   .dot-visor { background: #2c3e7a; }
-  .footer-note {
-    margin-top: 20px;
-    font-size: 11px;
-    color: #aaa;
-    font-family: 'IBM Plex Mono', monospace;
-    text-align: center;
-  }
+
+  .hint-res { font-size: 12px; color: #6b6b66; margin-bottom: 14px; line-height: 1.5; }
+
+  .footer-note { margin-top: 18px; font-size: 11px; color: #888;
+                 font-family: 'IBM Plex Mono', monospace; text-align: center; }
 </style>
 </head>
 <body>
 
-<div class="card">
-  <div class="card-header">
-    Comité Ornato y Seguridad · NK2
-    <span>Ingresa tu contraseña para continuar</span>
-  </div>
-  <div class="card-body">
-    <label for="pass">Contraseña</label>
-    <input type="password" id="pass" placeholder="••••••••" autofocus
-           onkeydown="if(event.key==='Enter') ingresar()">
-    <div class="err-msg" id="err-msg">Contraseña incorrecta.</div>
-    <button class="btn-login" onclick="ingresar()">Ingresar</button>
-
-    <div class="roles-info">
-      <div class="role-chip">
-        <span class="role-dot dot-admin"></span>
-        Admin — acceso completo (formularios + informes)
-      </div>
-      <div class="role-chip">
-        <span class="role-dot dot-visor"></span>
-        Visor — solo informes y consultas
-      </div>
-    </div>
-  </div>
+<div class="logo-wrap">
+  <img src="logo.png" alt="Logo NK2" onerror="this.style.display='none'">
+  <span>COMITÉ ORNATO Y SEGURIDAD · NK2</span>
 </div>
 
-<p class="footer-note">Contacta al administrador si olvidaste tu contraseña.</p>
+<div class="card">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-comite"    onclick="switchTab('comite')">🏢 Comité</button>
+    <button class="tab-btn"        id="tab-residente" onclick="switchTab('residente')">🏠 Residente</button>
+  </div>
+
+  <!-- PANEL COMITÉ -->
+  <div class="panel active" id="panel-comite">
+    <label for="pass">Contraseña</label>
+    <input type="password" id="pass" placeholder="••••••••" autofocus
+           onkeydown="if(event.key==='Enter') ingresarComite()">
+    <div class="err-msg" id="err-comite">Contraseña incorrecta.</div>
+    <button class="btn-login btn-comite" onclick="ingresarComite()">Ingresar</button>
+
+    <div class="roles-info">
+      <div class="role-chip"><span class="role-dot dot-admin"></span>Admin — formularios + informes</div>
+      <div class="role-chip"><span class="role-dot dot-visor"></span>Visor — solo informes y consultas</div>
+    </div>
+  </div>
+
+  <!-- PANEL RESIDENTE -->
+  <div class="panel" id="panel-residente">
+    <p class="hint-res">Ingresa con tu número de interior y el PIN que te asignó el administrador.</p>
+    <label for="res-interior">N° de Interior</label>
+    <input type="text" id="res-interior" placeholder="Ej: 101" maxlength="10"
+           onkeydown="if(event.key==='Enter') ingresarResidente()"
+           oninput="clearResErr()">
+    <label for="res-pin">PIN</label>
+    <input type="password" id="res-pin" placeholder="••••" maxlength="10"
+           onkeydown="if(event.key==='Enter') ingresarResidente()"
+           oninput="clearResErr()">
+    <div class="err-msg" id="err-residente"></div>
+    <button class="btn-login btn-residente" id="btn-res" onclick="ingresarResidente()">Ver mis pagos</button>
+  </div>
+
+</div>
+
+<p class="footer-note">Contacta al administrador si olvidaste tu PIN.</p>
 
 <script>
-// ── Contraseñas por rol — cambia estos valores ─────────
+// ── Contraseñas del comité ─────────────────────────────
 const ROLES = {
-  'NK2admin' : 'admin',   // Administrador — acceso total
-  'NK2visor' : 'visor'    // Visor — solo informes
+  'NK2admin' : 'admin',
+  'NK2visor' : 'visor'
 };
 // ──────────────────────────────────────────────────────
 
-const params = new URLSearchParams(location.search);
+const API_URL = localStorage.getItem('nk2_api_url') ||
+  'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+
+const params  = new URLSearchParams(location.search);
 const nextURL = params.get('next') || 'index.html';
 
-// Si ya hay sesión activa con el rol correcto, redirigir
+// Redirigir si ya hay sesión activa
 const rolActual = localStorage.getItem('nk2_role');
-if (rolActual === 'admin') {
-  location.replace(nextURL);
-} else if (rolActual === 'visor') {
-  location.replace('informe.html');
+if      (rolActual === 'admin')      location.replace(nextURL);
+else if (rolActual === 'visor')      location.replace('informe.html');
+else if (rolActual === 'residente')  location.replace('mi_cuenta.html');
+
+// ── Tabs ───────────────────────────────────────────────
+function switchTab(t) {
+  ['comite','residente'].forEach(id => {
+    document.getElementById('tab-' + id).classList.toggle('active', id === t);
+    document.getElementById('panel-' + id).classList.toggle('active', id === t);
+  });
+  if (t === 'comite')    document.getElementById('pass').focus();
+  if (t === 'residente') document.getElementById('res-interior').focus();
 }
 
-function ingresar() {
+// ── Login Comité ───────────────────────────────────────
+function ingresarComite() {
   const input = document.getElementById('pass');
-  const errEl = document.getElementById('err-msg');
+  const errEl = document.getElementById('err-comite');
   const rol   = ROLES[input.value];
 
   if (rol) {
@@ -187,11 +183,56 @@ function ingresar() {
     input.focus();
   }
 }
-
 document.getElementById('pass').addEventListener('input', () => {
   document.getElementById('pass').classList.remove('err');
-  document.getElementById('err-msg').classList.remove('show');
+  document.getElementById('err-comite').classList.remove('show');
 });
+
+// ── Login Residente ────────────────────────────────────
+async function ingresarResidente() {
+  const interior = document.getElementById('res-interior').value.trim().toUpperCase();
+  const pin      = document.getElementById('res-pin').value.trim();
+  const errEl    = document.getElementById('err-residente');
+  const btn      = document.getElementById('btn-res');
+
+  if (!interior || !pin) {
+    errEl.textContent = 'Ingresa tu interior y PIN.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.textContent = 'Verificando...';
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    const qs  = new URLSearchParams({ action: 'getResidenteAuth', interior, pin });
+    const res = await fetch(API_URL + '?' + qs).then(r => r.json());
+
+    if (res.ok) {
+      localStorage.setItem('nk2_role',     'residente');
+      localStorage.setItem('nk2_interior', res.interior);
+      localStorage.setItem('nk2_nombre',   res.nombre);
+      location.replace('mi_cuenta.html');
+    } else {
+      errEl.textContent = res.error || 'Interior o PIN incorrecto.';
+      errEl.classList.add('show');
+      document.getElementById('res-pin').value = '';
+      document.getElementById('res-pin').focus();
+    }
+  } catch(e) {
+    errEl.textContent = '⚠ Error de conexión. Intenta de nuevo.';
+    errEl.classList.add('show');
+  }
+
+  btn.textContent = 'Ver mis pagos';
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+function clearResErr() {
+  document.getElementById('err-residente').classList.remove('show');
+}
 </script>
 </body>
 </html>

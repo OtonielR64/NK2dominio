@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  if (localStorage.getItem('nk2_role') !== 'residente')
+    location.replace('login.html?next=' + encodeURIComponent(location.href));
+</script>
+<title>Mis Pagos — NK2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ing:    #1a5c2a; --ing-light: #e8f5ec;
+    --sal:    #7a1a1a; --sal-light: #faeaea;
+    --amber:  #854f0b; --amber-light: #fdf3e3;
+    --bg:     #c8c5bf;
+    --card:   #e0e0e0;
+    --border: #ccc;
+    --text:   #1a1a18;
+    --muted:  #6b6b66;
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .site-header {
+    background: var(--text); color: #fff;
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .site-header img { height: 38px; width: auto; object-fit: contain;
+                     border-radius: 3px; flex-shrink: 0; }
+  .site-header h1  { font-size: 12px; font-weight: 500; letter-spacing: 1.5px;
+                     text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; }
+  .btn-logout {
+    padding: 7px 14px; background: #4a4a4a; color: #fff;
+    border: none; border-radius: var(--radius); font-size: 12px;
+    font-weight: 500; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .btn-logout:hover { opacity: .85; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+
+  /* BIENVENIDA */
+  .welcome {
+    background: var(--ing); color: #fff;
+    border-radius: var(--radius); padding: 18px 22px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .welcome-name { font-size: 18px; font-weight: 600; }
+  .welcome-sub  { font-size: 13px; opacity: .85; margin-top: 3px; }
+  .welcome-int  { font-size: 28px; font-weight: 700; font-family: 'IBM Plex Mono', monospace;
+                  background: rgba(255,255,255,.15); border-radius: var(--radius);
+                  padding: 8px 18px; }
+
+  /* CARDS DE RESUMEN */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .stat-lbl  { font-size: 10px; font-weight: 600; letter-spacing: 1px;
+               text-transform: uppercase; color: var(--muted);
+               font-family: 'IBM Plex Mono', monospace; }
+  .stat-val  { font-size: 20px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+  .stat-sub  { font-size: 11px; color: var(--muted); }
+  .green { color: var(--ing); }
+  .red   { color: var(--sal); }
+  .amber { color: var(--amber); }
+
+  /* CARD */
+  .card { background: var(--card); border: 1px solid var(--border);
+          border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .card-header {
+    padding: 11px 18px; font-size: 11px; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+    background: #3a3a3a; color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-body  { padding: 18px; }
+
+  /* TABLA */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600;
+    letter-spacing: .8px; text-transform: uppercase; color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace; border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid #ddd; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(0,0,0,.03); }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+  }
+  .badge-admon    { background: var(--ing-light); color: var(--ing); }
+  .badge-veh      { background: #e8f0fb; color: #1a3a7a; }
+  .badge-ambos    { background: var(--amber-light); color: var(--amber); }
+
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-style: italic; }
+  .loading { text-align: center; padding: 30px; color: var(--muted); }
+
+  /* MORA ALERTA */
+  .alerta-mora {
+    background: var(--sal-light); border: 1px solid #f5c6c6;
+    border-radius: var(--radius); padding: 14px 18px;
+    margin-bottom: 20px; font-size: 13px; color: var(--sal); font-weight: 500;
+    display: none;
+  }
+  .alerta-mora.show { display: block; }
+
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .welcome { flex-direction: column; }
+    .welcome-int { align-self: flex-start; }
+  }
+  @media (max-width: 400px) {
+    .stats { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <img src="logo.png" alt="Logo NK2" onerror="this.style.display='none'">
+  <h1>Mis Pagos · Comité NK2</h1>
+  <button class="btn-logout" onclick="cerrarSesion()">🔒 Salir</button>
+</div>
+
+<div class="container">
+
+  <!-- BIENVENIDA -->
+  <div class="welcome" id="welcome-box">
+    <div>
+      <div class="welcome-name" id="w-nombre">Cargando...</div>
+      <div class="welcome-sub">Historial de pagos — Comité Ornato y Seguridad NK2</div>
+    </div>
+    <div class="welcome-int" id="w-interior">—</div>
+  </div>
+
+  <!-- ALERTA MORA -->
+  <div class="alerta-mora" id="alerta-mora">
+    ⚠ Tienes meses pendientes de pago. Por favor comunícate con el administrador.
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="stats">
+    <div class="stat-card">
+      <span class="stat-lbl">Total pagado</span>
+      <span class="stat-val green" id="s-total">—</span>
+      <span class="stat-sub">Suma de todos los recibos</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-lbl">Último pago</span>
+      <span class="stat-val mono" id="s-ultimo" style="font-size:15px">—</span>
+      <span class="stat-sub" id="s-ultimo-mes">—</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-lbl">Estado</span>
+      <span class="stat-val" id="s-estado">—</span>
+      <span class="stat-sub" id="s-estado-sub">—</span>
+    </div>
+  </div>
+
+  <!-- HISTORIAL DE PAGOS -->
+  <div class="card">
+    <div class="card-header">
+      <span>Historial de pagos</span>
+      <span id="lbl-recibos" style="font-size:12px;opacity:.75">—</span>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>N° Recibo</th>
+              <th>Concepto</th>
+              <th>Mes pagado</th>
+              <th style="text-align:right">Admón</th>
+              <th style="text-align:right">Vehículo</th>
+              <th style="text-align:right">Total</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pagos">
+            <tr><td colspan="7" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+const API_URL  = localStorage.getItem('nk2_api_url') ||
+  'https://script.google.com/macros/s/AKfycbzeTj0ueflFwujTWR_3nn0kdHNAtu60M7gORXRobGMFf1qGWxpMfd5a6sQ9VSghjeYl/exec';
+const INTERIOR = localStorage.getItem('nk2_interior') || '';
+const NOMBRE   = localStorage.getItem('nk2_nombre')   || '';
+
+function cerrarSesion() {
+  localStorage.removeItem('nk2_role');
+  localStorage.removeItem('nk2_interior');
+  localStorage.removeItem('nk2_nombre');
+  location.replace('login.html');
+}
+
+// ── Formato moneda ──────────────────────────────────────
+const cop = n => '$ ' + Math.round(parseFloat(n)||0).toLocaleString('es-CO');
+
+// ── Fecha ISO → dd/mmm/aaaa ────────────────────────────
+function fmtFecha(s) {
+  if (!s) return '—';
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const [y, m, d] = String(s).split('-');
+  return d + '/' + meses[parseInt(m)-1] + '/' + y;
+}
+
+// ── Mes de mora (referencia: 30 del mes anterior) ──────
+function mesesMora(ultimoMesPago) {
+  if (!ultimoMesPago) return 9999;
+  const s = String(ultimoMesPago).toLowerCase().trim();
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  let pagoAnio, pagoMes;
+
+  if (/^\d{4}-\d{2}/.test(s)) {
+    const p = s.split('-');
+    pagoAnio = parseInt(p[0]); pagoMes = parseInt(p[1]) - 1;
+  } else {
+    const p = s.split('-');
+    pagoMes = meses.indexOf(p[0]); pagoAnio = parseInt(p[p.length-1]);
+  }
+  if (isNaN(pagoAnio) || pagoMes < 0) return 9999;
+
+  const hoy = new Date();
+  let refAnio = hoy.getFullYear(), refMes = hoy.getMonth() - 1;
+  if (refMes < 0) { refMes = 11; refAnio--; }
+
+  return (refAnio - pagoAnio) * 12 + (refMes - pagoMes);
+}
+
+// ── Badge de concepto ──────────────────────────────────
+function badgeConcepto(cod) {
+  const c = String(cod);
+  if (['11','19','20'].includes(c)) return '<span class="badge badge-admon">Admón</span>';
+  if (['12','14','15','16','17','18'].includes(c)) return '<span class="badge badge-veh">Vehículo</span>';
+  if (c === '13') return '<span class="badge badge-ambos">Admón + Veh.</span>';
+  return '<span class="badge badge-admon">Admón</span>';
+}
+
+// ── Inicializar ────────────────────────────────────────
+document.getElementById('w-nombre').textContent   = NOMBRE   || 'Residente';
+document.getElementById('w-interior').textContent = 'Int. ' + (INTERIOR || '—');
+
+async function cargar() {
+  try {
+    const qs  = new URLSearchParams({ action: 'getResidenteData', interior: INTERIOR });
+    const res = await fetch(API_URL + '?' + qs).then(r => r.json());
+
+    if (!res.ok) {
+      document.getElementById('tbody-pagos').innerHTML =
+        '<tr><td colspan="7" class="empty">⚠ ' + (res.error || 'Error al cargar datos') + '</td></tr>';
+      return;
+    }
+
+    const pagos = res.ingresos || [];
+
+    // ── Calcular resumen ──
+    let totalPagado   = 0;
+    let ultimaFecha   = '';
+    let ultimoMesPago = '';
+    let ultimoMesStr  = '';
+    let ultimaCodConc = '';
+
+    pagos.forEach(r => {
+      // r[0]=factura, r[1]=fecha, r[2]=interior, r[3]=nombre,
+      // r[4]=cod_admin, r[5]=admin, r[6]=cod_concepto, r[7]=concepto,
+      // r[8]=vlr_admon, r[9]=vlr_vehiculo, r[10]=mes_pago, r[11]=cantidad, r[12]=total
+      const total = parseFloat(r[12]) || (parseFloat(r[8])||0) + (parseFloat(r[9])||0);
+      totalPagado += total;
+
+      if (!ultimaFecha || String(r[1]) > ultimaFecha) {
+        ultimaFecha   = String(r[1]);
+        ultimoMesPago = String(r[10]);
+        ultimoCodConc = String(r[6] || r[4]);
+      }
+    });
+
+    // ── Mostrar resumen ──
+    document.getElementById('s-total').textContent = cop(totalPagado);
+    document.getElementById('s-ultimo').textContent = fmtFecha(ultimaFecha);
+    document.getElementById('s-ultimo-mes').textContent =
+      ultimoMesPago ? 'Mes pagado: ' + ultimoMesPago : '—';
+
+    // Estado: mora usando mes_pago del último recibo
+    const mora = mesesMora(ultimoMesPago);
+    const estadoEl    = document.getElementById('s-estado');
+    const estadoSubEl = document.getElementById('s-estado-sub');
+    if (!pagos.length) {
+      estadoEl.textContent    = 'Sin registros';
+      estadoEl.className      = 'stat-val amber';
+      estadoSubEl.textContent = 'No hay pagos registrados';
+    } else if (mora <= 0) {
+      estadoEl.textContent    = '✅ Al día';
+      estadoEl.className      = 'stat-val green';
+      estadoSubEl.textContent = 'Pagos al corriente';
+    } else if (mora <= 2) {
+      estadoEl.textContent    = mora + ' mes' + (mora > 1 ? 'es' : '') + ' pendiente';
+      estadoEl.className      = 'stat-val amber';
+      estadoSubEl.textContent = 'Mora leve';
+      document.getElementById('alerta-mora').classList.add('show');
+    } else {
+      estadoEl.textContent    = mora + ' meses pendientes';
+      estadoEl.className      = 'stat-val red';
+      estadoSubEl.textContent = 'En mora';
+      document.getElementById('alerta-mora').classList.add('show');
+    }
+
+    // ── Tabla de pagos (más reciente primero) ──
+    document.getElementById('lbl-recibos').textContent =
+      pagos.length + ' recibo' + (pagos.length !== 1 ? 's' : '');
+
+    if (!pagos.length) {
+      document.getElementById('tbody-pagos').innerHTML =
+        '<tr><td colspan="7" class="empty">No se encontraron pagos registrados.</td></tr>';
+      return;
+    }
+
+    // Ordenar descendente por fecha
+    const sorted = [...pagos].sort((a, b) => String(b[1]).localeCompare(String(a[1])));
+
+    document.getElementById('tbody-pagos').innerHTML = sorted.map(r => {
+      const admon = parseFloat(r[8]) || 0;
+      const veh   = parseFloat(r[9]) || 0;
+      const total = parseFloat(r[12]) || admon + veh;
+      const cod   = String(r[6] || r[4]);
+      return `<tr>
+        <td class="mono" style="font-size:12px">${fmtFecha(r[1])}</td>
+        <td class="mono" style="font-weight:600">${r[0]}</td>
+        <td>${badgeConcepto(cod)}</td>
+        <td class="mono" style="font-size:12px">${r[10] || '—'}</td>
+        <td style="text-align:right;font-family:'IBM Plex Mono',monospace">${admon > 0 ? cop(admon) : '—'}</td>
+        <td style="text-align:right;font-family:'IBM Plex Mono',monospace">${veh  > 0 ? cop(veh)  : '—'}</td>
+        <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;color:#1a5c2a">${cop(total)}</td>
+      </tr>`;
+    }).join('');
+
+  } catch(e) {
+    document.getElementById('tbody-pagos').innerHTML =
+      '<tr><td colspan="7" class="empty">⚠ Error de conexión. Intenta recargar la página.</td></tr>';
+  }
+}
+
+cargar();
+</script>
+</body>
+</html>
