@@ -119,6 +119,8 @@ function getResidenteAuth(p) {
 }
 
 // ─── Datos del residente: historial de pagos filtrado por interior ──────
+// Aplica la misma normalización de columnas que getIngresos()
+// para manejar registros en formato antiguo (sin cod_admin/administrador)
 function getResidenteData(p) {
   const interior = String(p.interior || '').trim().toUpperCase();
   if (!interior) return { error: 'Interior requerido.' };
@@ -136,17 +138,37 @@ function getResidenteData(p) {
     }
   }
 
-  // Ingresos filtrados por interior
+  // Ingresos — leer 15 cols para cubrir formato antiguo de 15 columnas
   const sheet   = ss.getSheetByName('BD_INGRESOS');
   const lastRow = sheet.getLastRow();
   if (lastRow <= 1) return { ok: true, interior, nombre, ingresos: [] };
 
-  const rawData = sheet.getRange(2, 1, lastRow - 1, 14).getValues();
-  const ingresos = rawData
-    .filter(r => String(r[2]).trim().toUpperCase() === interior && r[0] !== '')
-    .map(r => r.map(c =>
-      c instanceof Date ? Utilities.formatDate(c, 'America/Bogota', 'yyyy-MM-dd') : c
-    ));
+  const esFecha = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+  const ingresos = sheet.getRange(2, 1, lastRow - 1, 15).getValues()
+    .filter(r => r[0] !== '')
+    .map(r => {
+      // 1. Convertir fechas a ISO
+      r = r.map(c => c instanceof Date
+        ? Utilities.formatDate(c, 'America/Bogota', 'yyyy-MM-dd') : c);
+
+      // 2. Formato 15 cols: col B = clave_compuesta (no es fecha) → quitar
+      if (!esFecha(r[1])) r.splice(1, 1);
+
+      // 3. Formato antiguo sin cod_admin: r[4]=cod_concepto(11-20) directo
+      //    Nuevo: r[4]=cod_admin, r[6]=cod_concepto
+      const codPos4 = parseInt(r[4]);
+      const codPos6 = parseInt(r[6]);
+      const r6esConcepto = codPos6 >= 11 && codPos6 <= 20
+        && String(r[6]).trim() === String(codPos6);
+      if (codPos4 >= 11 && codPos4 <= 20 && !r6esConcepto) {
+        r.splice(4, 0, '', ''); // insertar cod_admin y administrador vacíos
+      }
+
+      return r.slice(0, 14);
+    })
+    // Filtrar por interior DESPUÉS de normalizar (r[2] = interior en ambos formatos)
+    .filter(r => String(r[2]).trim().toUpperCase() === interior);
 
   return { ok: true, interior, nombre, ingresos };
 }

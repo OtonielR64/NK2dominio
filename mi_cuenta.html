@@ -234,6 +234,28 @@ function fmtFecha(s) {
   return d + '/' + meses[parseInt(m)-1] + '/' + y;
 }
 
+// ── Mes pagado → mmm-aaaa ──────────────────────────────
+function fmtMesPago(s) {
+  if (!s) return '—';
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const str = String(s).trim();
+  // Ya tiene formato mmm-aaaa → devolver normalizado en minúsculas
+  if (/^[a-záéíóúü]{3}-\d{4}$/i.test(str)) return str.toLowerCase();
+  // Formato yyyy-MM o yyyy-MM-dd
+  if (/^\d{4}-\d{2}/.test(str)) {
+    const parts = str.split('-');
+    const y = parts[0], m = parseInt(parts[1]) - 1;
+    return (meses[m] || '?') + '-' + y;
+  }
+  // Formato MM/yyyy o MM-yyyy
+  if (/^\d{1,2}[\/\-]\d{4}$/.test(str)) {
+    const parts = str.split(/[\/\-]/);
+    const m = parseInt(parts[0]) - 1, y = parts[1];
+    return (meses[m] || '?') + '-' + y;
+  }
+  return str; // fallback: mostrar como viene
+}
+
 // ── Mes de mora (referencia: 30 del mes anterior) ──────
 function mesesMora(ultimoMesPago) {
   if (!ultimoMesPago) return 9999;
@@ -308,7 +330,7 @@ async function cargar() {
     document.getElementById('s-total').textContent = cop(totalPagado);
     document.getElementById('s-ultimo').textContent = fmtFecha(ultimaFecha);
     document.getElementById('s-ultimo-mes').textContent =
-      ultimoMesPago ? 'Mes pagado: ' + ultimoMesPago : '—';
+      ultimoMesPago ? 'Mes pagado: ' + fmtMesPago(ultimoMesPago) : '—';
 
     // Estado: mora usando mes_pago del último recibo
     const mora = mesesMora(ultimoMesPago);
@@ -356,7 +378,7 @@ async function cargar() {
         <td class="mono" style="font-size:12px">${fmtFecha(r[1])}</td>
         <td class="mono" style="font-weight:600">${r[0]}</td>
         <td>${badgeConcepto(cod)}</td>
-        <td class="mono" style="font-size:12px">${r[10] || '—'}</td>
+        <td class="mono" style="font-size:12px">${fmtMesPago(r[10])}</td>
         <td style="text-align:right;font-family:'IBM Plex Mono',monospace">${admon > 0 ? cop(admon) : '—'}</td>
         <td style="text-align:right;font-family:'IBM Plex Mono',monospace">${veh  > 0 ? cop(veh)  : '—'}</td>
         <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;color:#1a5c2a">${cop(total)}</td>
