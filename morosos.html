@@ -222,21 +222,34 @@ async function cargarDatos() {
 function mesStrADate(mesStr) {
   if (!mesStr) return null;
   const s = String(mesStr).toLowerCase().trim();
+  if (!s || s === '0' || s === 'false') return null;
 
-  // Formato ISO: "2026-01-01" o "2026-01"
-  if (/^\d{4}-\d{2}/.test(s)) {
+  const mesesLargos = ['enero','febrero','marzo','abril','mayo','junio',
+                       'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  // 1. Año primero: "2026-01" o "2026-01-15"
+  if (/^\d{4}-\d{1,2}/.test(s)) {
     const parts = s.split('-');
-    const y = parseInt(parts[0]);
-    const m = parseInt(parts[1]) - 1; // 0-based
-    if (!isNaN(y) && !isNaN(m)) return new Date(y, m, 1);
+    const y = parseInt(parts[0]), m = parseInt(parts[1]) - 1;
+    if (!isNaN(y) && m >= 0 && m <= 11) return new Date(y, m, 1);
   }
 
-  // Formato texto: "ene-2026"
-  const parts = s.split('-');
-  if (parts.length >= 2) {
-    const mi = meses.indexOf(parts[0]);
-    const y = parseInt(parts[parts.length - 1]);
-    if (mi >= 0 && !isNaN(y)) return new Date(y, mi, 1);
+  // 2. Mes numérico primero: "01-2026" o "01/2026"
+  if (/^\d{1,2}[-\/]\d{4}$/.test(s)) {
+    const parts = s.split(/[-\/]/);
+    const m = parseInt(parts[0]) - 1, y = parseInt(parts[1]);
+    if (!isNaN(y) && m >= 0 && m <= 11) return new Date(y, m, 1);
+  }
+
+  // 3. Texto: "ene-2026", "ene/2026", "ene 2026", "enero-2026", "enero 2026"
+  const tok = s.split(/[-\/\s]+/);
+  if (tok.length >= 2) {
+    const y = parseInt(tok[tok.length - 1]);
+    if (!isNaN(y) && y >= 2000) {
+      let mi = meses.indexOf(tok[0]);
+      if (mi < 0) mi = mesesLargos.indexOf(tok[0]);
+      if (mi >= 0) return new Date(y, mi, 1);
+    }
   }
 
   return null;
@@ -299,7 +312,7 @@ async function buscar() {
 
   // Inicializar con todos los habitantes
   habitantes.forEach(h => {
-    dict[String(h.int)] = {
+    dict[String(h.int).trim()] = {
       nombre: h.nombre,
       ultAdmon: null,
       ultVeh: null,
@@ -314,7 +327,8 @@ async function buscar() {
 
   datosIng.forEach(r => {
     const inter = String(r[2]).trim();
-    const cod = String(r[6]).trim();
+    const codNum = parseInt(r[6]);
+    const cod = isNaN(codNum) ? '' : String(codNum);
     const mesPago = String(r[10]).trim();
     const cantidad = parseInt(r[11])||1;
     if (!dict[inter]) return;
