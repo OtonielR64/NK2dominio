@@ -132,11 +132,23 @@
       <div class="filtros-wrap">
 
         <div class="field">
+          <label>Buscar interior específico</label>
+          <input type="text" id="filtro-interior" placeholder="Ej: 101" maxlength="10"
+                 oninput="this.value=this.value.toUpperCase()"
+                 onkeydown="if(event.key==='Enter')buscar()"
+                 style="padding:9px 11px;font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;
+                        width:140px;border:1px solid var(--border);border-radius:var(--radius);
+                        outline:none;text-align:center;letter-spacing:2px">
+          <span style="font-size:11px;color:var(--muted);margin-top:4px">Vacío = todos los morosos</span>
+        </div>
+
+        <div class="field">
           <label>Meses mínimos sin pagar</label>
           <div class="meses-input">
             <input type="number" id="min-meses" value="1" min="1" max="24">
             <span class="meses-lbl">mes(es) o más</span>
           </div>
+          <span style="font-size:11px;color:var(--muted);margin-top:4px">Se ignora al buscar por interior</span>
         </div>
 
         <div class="field">
@@ -288,9 +300,12 @@ function fmtFecha(d) {
 }
 
 async function buscar() {
+  const filtroInterior = document.getElementById('filtro-interior').value.trim().toUpperCase();
   const minMesesEl = document.getElementById('min-meses');
   const minMeses = parseInt(minMesesEl.value);
-  if (isNaN(minMeses) || minMeses < 1) {
+
+  // Validar meses solo cuando no se busca un interior específico
+  if (!filtroInterior && (isNaN(minMeses) || minMeses < 1)) {
     minMesesEl.classList.add('err-input');
     minMesesEl.focus();
     alert('Ingresa el número mínimo de meses sin pagar.');
@@ -358,12 +373,17 @@ async function buscar() {
     const mAdmon = diffMeses(d.ultAdmon);
     const mVeh   = d.tieneVeh ? diffMeses(d.ultVeh) : -1;
 
-    let incluir = false;
-    if (tipo === 'admon')    incluir = mAdmon >= minMeses;
-    else if (tipo === 'vehiculo') incluir = d.tieneVeh && mVeh >= minMeses;
-    else incluir = (mAdmon >= minMeses) || (d.tieneVeh && mVeh >= minMeses);
-
-    if (!incluir) return;
+    if (filtroInterior) {
+      // Búsqueda por interior: mostrar ese interior sin importar mora
+      if (inter !== filtroInterior) return;
+    } else {
+      // Filtro normal por meses y tipo
+      let incluir = false;
+      if (tipo === 'admon')         incluir = mAdmon >= minMeses;
+      else if (tipo === 'vehiculo') incluir = d.tieneVeh && mVeh >= minMeses;
+      else                          incluir = (mAdmon >= minMeses) || (d.tieneVeh && mVeh >= minMeses);
+      if (!incluir) return;
+    }
 
     resultados.push({
       inter, nombre: d.nombre,
@@ -383,12 +403,15 @@ async function buscar() {
   cont.className = resultados.length > 0 ? 'contador-rojo' : 'contador-verde';
 
   const tipoLbl = tipo === 'admon' ? 'Solo Admón' : tipo === 'vehiculo' ? 'Solo Vehículo' : 'Admón + Vehículo';
-  document.getElementById('lbl-filtro').textContent = `Mínimo ${minMeses} mes(es) · ${tipoLbl} · Al ${mesRefStr()}`;
+  document.getElementById('lbl-filtro').textContent = filtroInterior
+    ? `Interior: ${filtroInterior} · ${tipoLbl} · Al ${mesRefStr()}`
+    : `Mínimo ${minMeses} mes(es) · ${tipoLbl} · Al ${mesRefStr()}`;
   document.getElementById('lbl-fecha-ref').textContent = `📅 Fecha de corte: ${mesRefStr()}`;
 
   if (!resultados.length) {
-    document.getElementById('tbody-morosos').innerHTML =
-      `<tr><td colspan="6" class="empty">✓ No se encontraron morosos con ${minMeses} o más meses sin pagar.</td></tr>`;
+    document.getElementById('tbody-morosos').innerHTML = filtroInterior
+      ? `<tr><td colspan="6" class="empty">⚠ Interior <strong>${filtroInterior}</strong> no encontrado en el padrón de habitantes.</td></tr>`
+      : `<tr><td colspan="6" class="empty">✓ No se encontraron morosos con ${minMeses} o más meses sin pagar.</td></tr>`;
   }
 }
 
@@ -467,6 +490,7 @@ function sortTable(col) {
 }
 
 function limpiar() {
+  document.getElementById('filtro-interior').value = '';
   document.getElementById('min-meses').value = 1;
   document.querySelector('input[name="tipo"][value="ambos"]').checked = true;
   document.getElementById('card-resultado').style.display = 'none';
