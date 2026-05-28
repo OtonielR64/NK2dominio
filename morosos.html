@@ -345,13 +345,11 @@ async function buscar() {
     const codNum = parseInt(r[6]);
     const cod = isNaN(codNum) ? '' : String(codNum);
     const mesPago = String(r[10]).trim();
-    const cantidad = parseInt(r[11])||1;
     if (!dict[inter]) return;
 
-    // Calcular fecha del último mes que cubre este pago
-    const fechaBase = mesStrADate(mesPago);
-    if (!fechaBase) return;
-    const fechaFin = new Date(fechaBase.getFullYear(), fechaBase.getMonth() + cantidad - 1, 1);
+    // Cada registro cubre solo el mes indicado en mes_pago (cantidad es informativo)
+    const fechaFin = mesStrADate(mesPago);
+    if (!fechaFin) return;
 
     const esAdmon = conceptosCasa.includes(cod) || conceptosAmbos.includes(cod);
     const esVeh   = conceptosVeh.includes(cod) || conceptosAmbos.includes(cod);
