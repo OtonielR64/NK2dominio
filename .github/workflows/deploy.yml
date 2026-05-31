@@ -31,7 +31,7 @@ jobs:
           VITE_API_URL: https://nuevokennedy2.online/api
 
       - name: Deploy frontend (dist/) to public_html/
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
@@ -44,7 +44,7 @@ jobs:
             **/node_modules/**
 
       - name: Deploy PHP backend to public_html/api/
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
