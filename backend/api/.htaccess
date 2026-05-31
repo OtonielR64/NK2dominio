@@ -1,0 +1,12 @@
+Options -Indexes
+RewriteEngine On
+
+# Redirigir todas las peticiones a index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
+
+# Proteger config.php
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>

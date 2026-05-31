@@ -1,0 +1,24 @@
+# Datos sensibles
+*.xlsx
+*.xlsm
+*.xls
+backend/migrate_data.sql
+
+# Credenciales (NO subir después de llenar con datos reales)
+# backend/api/config.php  ← descomentar cuando tenga credenciales reales
+backend/create_users.php
+
+# Claude
+.claude/
+nk2app/.claude/
+
+# Node
+node_modules/
+nk2app/node_modules/
+
+# Build
+nk2app/dist/
+
+# Env local
+nk2app/.env.local
+nk2app/*.local

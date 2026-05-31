@@ -1,37 +1,55 @@
-name: Deploy to GitHub Pages
+name: Deploy to Hostinger
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:        # permite lanzar manualmente desde GitHub
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: '.'
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: nk2app/package-lock.json
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Install dependencies
+        working-directory: nk2app
+        run: npm ci
+
+      - name: Build
+        working-directory: nk2app
+        run: npm run build
+        env:
+          VITE_API_URL: https://nuevokennedy2.online/api
+
+      - name: Deploy frontend (dist/) to public_html/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: nk2app/dist/
+          server-dir: /public_html/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+
+      - name: Deploy PHP backend to public_html/api/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: backend/api/
+          server-dir: /public_html/api/
+          exclude: |
+            **/.git*

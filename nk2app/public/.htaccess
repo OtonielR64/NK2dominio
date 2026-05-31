@@ -1,0 +1,11 @@
+Options -Indexes
+RewriteEngine On
+
+# Redirigir peticiones /api/ al backend PHP
+RewriteCond %{REQUEST_URI} ^/api [NC]
+RewriteRule ^ - [L]
+
+# Para React Router: todas las rutas no existentes → index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [QSA,L]
