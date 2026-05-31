@@ -37,7 +37,7 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: nk2app/dist/
-          server-dir: /public_html/
+          server-dir: /
           exclude: |
             **/.git*
             **/.git*/**
@@ -50,6 +50,6 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: backend/api/
-          server-dir: /public_html/api/
+          server-dir: /api/
           exclude: |
             **/.git*
