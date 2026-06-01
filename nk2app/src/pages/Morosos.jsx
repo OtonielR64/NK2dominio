@@ -27,10 +27,18 @@ function mesStrADate(mesStr) {
   return null
 }
 
+// Referencia: último día del mes inmediatamente anterior al día de hoy
+// Ej: si hoy es 01-jun-2026, la referencia es may-2026
+function getRefMes() {
+  const hoy = new Date()
+  // Mes anterior: si hoy es enero, el anterior es diciembre del año pasado
+  return new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
+}
+
 function diffMeses(fecha) {
   if (!fecha) return 9999
-  const hoy = new Date()
-  return (hoy.getFullYear() - fecha.getFullYear()) * 12 + (hoy.getMonth() - fecha.getMonth())
+  const ref = getRefMes()
+  return (ref.getFullYear() - fecha.getFullYear()) * 12 + (ref.getMonth() - fecha.getMonth())
 }
 
 function fmtFecha(d) {
