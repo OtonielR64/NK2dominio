@@ -9,12 +9,13 @@ const hoy = new Date().toLocaleDateString('es-CO', {
 })
 
 const NAV = [
-  { to: '/consulta',        label: '🔍 Consultas',        color: '#2d6a4f', adminOnly: true  },
-  { to: '/informe',         label: '📊 Informe detallado', color: '#2c3e7a', adminOnly: false },
-  { to: '/morosos',         label: '⚠ Mora',              color: '#7a1a1a', adminOnly: false },
-  { to: '/abonos',          label: '💲 Abonos',            color: '#854f0b', adminOnly: true  },
-  { to: '/informe-mensual', label: '📄 Informe general',   color: '#2c5f8a', adminOnly: false },
-  { to: '/reporte',         label: '📋 Rep. fechas',       color: '#5b3a8a', adminOnly: false },
+  { to: '/',             label: '📝 Formularios',      color: '#1a5c2a', adminOnly: true  },
+  { to: '/consulta',     label: '🔍 Consultas',         color: '#2d6a4f', adminOnly: true  },
+  { to: '/informe',      label: '📊 Informe detallado', color: '#2c3e7a', adminOnly: false },
+  { to: '/morosos',      label: '⚠ Mora',              color: '#7a1a1a', adminOnly: false },
+  { to: '/abonos',       label: '💲 Abonos',            color: '#854f0b', adminOnly: true  },
+  { to: '/informe-mensual', label: '📄 Informe general', color: '#2c5f8a', adminOnly: false },
+  { to: '/reporte',      label: '📋 Rep. fechas',       color: '#5b3a8a', adminOnly: false },
 ]
 
 const btnBase = {
@@ -35,9 +36,9 @@ const btnBase = {
 }
 
 export default function AppLayout({ children }) {
-  const navigate  = useNavigate()
-  const location  = useLocation()
-  const admin     = isAdmin()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const admin    = isAdmin()
 
   function cerrarSesion() {
     logout()
@@ -61,61 +62,38 @@ export default function AppLayout({ children }) {
       }}>
         <div>
           <Link to="/" style={{ textDecoration: 'none' }}>
-            <Text style={{
-              color: '#fff',
-              fontFamily: 'IBM Plex Mono, monospace',
-              fontSize: 12,
-              fontWeight: 500,
-              letterSpacing: 1.5,
-              textTransform: 'uppercase',
-            }}>
+            <Text style={{ color: '#fff', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase' }}>
               Comité Ornato y Seguridad · NK2
             </Text>
           </Link>
-          <Text style={{
-            display: 'block',
-            color: '#888',
-            fontFamily: 'IBM Plex Mono, monospace',
-            fontSize: 10,
-            marginTop: 2,
-          }}>
+          <Text style={{ display: 'block', color: '#888', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, marginTop: 2 }}>
             {hoy}
           </Text>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-          {visibleNav.map(n => (
-            <button
-              key={n.to}
-              onClick={() => navigate(n.to)}
-              style={{
-                ...btnBase,
-                background: location.pathname === n.to ? n.color : 'transparent',
-                border: `1px solid ${n.color}`,
-                color: location.pathname === n.to ? '#fff' : n.color,
-                opacity: 1,
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '.8'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-            >
-              {n.label}
-            </button>
-          ))}
-          <button
-            onClick={cerrarSesion}
+          {visibleNav.map(n => {
+            const active = location.pathname === n.to
+            return (
+              <button key={n.to} onClick={() => navigate(n.to)}
+                style={{ ...btnBase, background: active ? n.color : 'transparent', border: `1px solid ${n.color}`, color: active ? '#fff' : n.color }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '.8'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+                {n.label}
+              </button>
+            )
+          })}
+          <button onClick={cerrarSesion}
             style={{ ...btnBase, background: '#4a4a4a', border: '1px solid #4a4a4a' }}
             onMouseEnter={e => e.currentTarget.style.opacity = '.8'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-          >
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
             🔒 Salir
           </button>
         </div>
       </div>
 
       {/* CONTENT */}
-      <div style={{ flex: 1 }}>
-        {children}
-      </div>
+      <div style={{ flex: 1 }}>{children}</div>
     </div>
   )
 }

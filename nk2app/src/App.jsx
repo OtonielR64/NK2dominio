@@ -9,6 +9,7 @@ import Informe from './pages/Informe'
 import Morosos from './pages/Morosos'
 import InformeMensual from './pages/InformeMensual'
 import ReporteFiltro from './pages/ReporteFiltro'
+import MiCuenta from './pages/MiCuenta'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
 
@@ -34,7 +35,8 @@ export default function App() {
     >
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login"     element={<Login />} />
+          <Route path="/mi-cuenta" element={<MiCuenta />} />
 
           <Route path="/" element={
             <LayoutRoute adminOnly><Formulario /></LayoutRoute>
