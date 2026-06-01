@@ -27,18 +27,28 @@ function mesStrADate(mesStr) {
   return null
 }
 
-// Referencia: último día del mes inmediatamente anterior al día de hoy
-// Ej: si hoy es 01-jun-2026, la referencia es may-2026
-function getRefMes() {
+// ─── Referencia: último mes completamente cerrado ────────────────────────────
+// Regla: comparar contra el último día del mes INMEDIATAMENTE ANTERIOR a hoy.
+// Ejemplo:
+//   Hoy = cualquier día de junio 2026  →  referencia = mayo 2026
+//   Hoy = cualquier día de enero 2027  →  referencia = diciembre 2026
+//
+// Un residente está AL DÍA si su último mes cubierto >= mes de referencia.
+// Meses de mora = (mes_referencia) - (último_mes_cubierto)  [en meses absolutos]
+// ─────────────────────────────────────────────────────────────────────────────
+function mesRefAbsoluto() {
   const hoy = new Date()
-  // Mes anterior: si hoy es enero, el anterior es diciembre del año pasado
-  return new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
+  // getMonth() es 0-based: enero=0 … diciembre=11
+  // "Mes anterior" en términos absolutos:
+  const totalMeses = hoy.getFullYear() * 12 + hoy.getMonth() // mes actual absoluto
+  return totalMeses - 1                                        // mes anterior absoluto
 }
 
 function diffMeses(fecha) {
   if (!fecha) return 9999
-  const ref = getRefMes()
-  return (ref.getFullYear() - fecha.getFullYear()) * 12 + (ref.getMonth() - fecha.getMonth())
+  const ref  = mesRefAbsoluto()
+  const pago = fecha.getFullYear() * 12 + fecha.getMonth()    // último mes cubierto
+  return ref - pago  // positivo = meses en mora, 0 = al día, negativo = pagó adelantado
 }
 
 function fmtFecha(d) {
