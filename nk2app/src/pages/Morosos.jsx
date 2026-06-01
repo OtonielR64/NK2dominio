@@ -45,10 +45,14 @@ function mesRefAbsoluto() {
 }
 
 function diffMeses(fecha) {
-  if (!fecha) return 9999
-  const ref  = mesRefAbsoluto()
-  const pago = fecha.getFullYear() * 12 + fecha.getMonth()    // último mes cubierto
-  return ref - pago  // positivo = meses en mora, 0 = al día, negativo = pagó adelantado
+  const ref = mesRefAbsoluto()
+  if (!fecha) {
+    // Sin historial → contar meses desde diciembre del año anterior
+    const dicAnterior = new Date().getFullYear() * 12 - 1  // dic del año pasado en absoluto
+    return ref - dicAnterior
+  }
+  const pago = fecha.getFullYear() * 12 + fecha.getMonth()
+  return ref - pago
 }
 
 function fmtFecha(d) {
@@ -58,7 +62,6 @@ function fmtFecha(d) {
 
 function badgeEstado(m, tieneVeh) {
   if (!tieneVeh && m === -1) return <Tag color="default">No aplica</Tag>
-  if (m === 9999) return <Tag color="error">Sin pago</Tag>
   if (m <= 0) return <Tag color="success">Al día</Tag>
   if (m <= 2) return <Tag color="warning">Mora leve</Tag>
   return <Tag color="error">En mora</Tag>
@@ -66,7 +69,6 @@ function badgeEstado(m, tieneVeh) {
 
 function numMeses(m, tieneVeh) {
   if (!tieneVeh && m === -1) return <Text type="secondary" style={{ fontSize: 12 }}>No aplica</Text>
-  if (m === 9999) return <Text type="danger" style={{ fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>Sin pago</Text>
   if (m <= 0) return <Text style={{ color: '#1a5c2a', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>0</Text>
   const color = m <= 2 ? '#854f0b' : '#c0392b'
   return <Text style={{ color, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>{m}</Text>
