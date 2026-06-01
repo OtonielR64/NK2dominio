@@ -1,9 +1,5 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Button, Space, Typography, Tooltip } from 'antd'
-import {
-  SearchOutlined, BarChartOutlined, WarningOutlined,
-  DollarOutlined, FileTextOutlined, FilterOutlined, LogoutOutlined
-} from '@ant-design/icons'
+import { Typography } from 'antd'
 import { logout, isAdmin } from '../services/auth'
 
 const { Text } = Typography
@@ -13,18 +9,35 @@ const hoy = new Date().toLocaleDateString('es-CO', {
 })
 
 const NAV = [
-  { to: '/consulta',        label: 'Consultas',        icon: <SearchOutlined />,      color: '#2d6a4f', adminOnly: true },
-  { to: '/informe',         label: 'Inf. detallado',   icon: <BarChartOutlined />,    color: '#2c3e7a', adminOnly: false },
-  { to: '/morosos',         label: 'Mora',             icon: <WarningOutlined />,     color: '#7a1a1a', adminOnly: true },
-  { to: '/abonos',          label: 'Abonos',           icon: <DollarOutlined />,      color: '#854f0b', adminOnly: true },
-  { to: '/informe-mensual', label: 'Inf. general',     icon: <FileTextOutlined />,    color: '#2c5f8a', adminOnly: true },
-  { to: '/reporte',         label: 'Rep. fechas',      icon: <FilterOutlined />,      color: '#5b3a8a', adminOnly: true },
+  { to: '/consulta',        label: '🔍 Consultas',        color: '#2d6a4f', adminOnly: true  },
+  { to: '/informe',         label: '📊 Informe detallado', color: '#2c3e7a', adminOnly: false },
+  { to: '/morosos',         label: '⚠ Mora',              color: '#7a1a1a', adminOnly: false },
+  { to: '/abonos',          label: '💲 Abonos',            color: '#854f0b', adminOnly: true  },
+  { to: '/informe-mensual', label: '📄 Informe general',   color: '#2c5f8a', adminOnly: false },
+  { to: '/reporte',         label: '📋 Rep. fechas',       color: '#5b3a8a', adminOnly: false },
 ]
 
+const btnBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 5,
+  padding: '7px 13px',
+  fontSize: 12,
+  fontWeight: 500,
+  border: 'none',
+  borderRadius: 6,
+  cursor: 'pointer',
+  fontFamily: 'IBM Plex Sans, sans-serif',
+  textDecoration: 'none',
+  transition: 'opacity .15s',
+  whiteSpace: 'nowrap',
+  color: '#fff',
+}
+
 export default function AppLayout({ children }) {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const admin = isAdmin()
+  const navigate  = useNavigate()
+  const location  = useLocation()
+  const admin     = isAdmin()
 
   function cerrarSesion() {
     logout()
@@ -35,6 +48,7 @@ export default function AppLayout({ children }) {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f4f3f0' }}>
+
       {/* HEADER */}
       <div className="no-print" style={{
         background: '#1a1a18',
@@ -69,33 +83,33 @@ export default function AppLayout({ children }) {
           </Text>
         </div>
 
-        <Space wrap size={6}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
           {visibleNav.map(n => (
-            <Tooltip key={n.to} title={n.label}>
-              <Button
-                size="small"
-                icon={n.icon}
-                onClick={() => navigate(n.to)}
-                style={{
-                  background: location.pathname === n.to ? n.color : 'transparent',
-                  borderColor: n.color,
-                  color: location.pathname === n.to ? '#fff' : n.color,
-                  fontSize: 11,
-                }}
-              >
-                <span style={{ display: 'none' }} className="nav-label">{n.label}</span>
-              </Button>
-            </Tooltip>
+            <button
+              key={n.to}
+              onClick={() => navigate(n.to)}
+              style={{
+                ...btnBase,
+                background: location.pathname === n.to ? n.color : 'transparent',
+                border: `1px solid ${n.color}`,
+                color: location.pathname === n.to ? '#fff' : n.color,
+                opacity: 1,
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '.8'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+            >
+              {n.label}
+            </button>
           ))}
-          <Button
-            size="small"
-            icon={<LogoutOutlined />}
+          <button
             onClick={cerrarSesion}
-            style={{ background: '#4a4a4a', borderColor: '#4a4a4a', color: '#fff', fontSize: 11 }}
+            style={{ ...btnBase, background: '#4a4a4a', border: '1px solid #4a4a4a' }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '.8'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
-            Salir
-          </Button>
-        </Space>
+            🔒 Salir
+          </button>
+        </div>
       </div>
 
       {/* CONTENT */}
