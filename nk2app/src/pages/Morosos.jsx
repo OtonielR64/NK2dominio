@@ -119,16 +119,18 @@ export default function Morosos() {
       Object.entries(dict).forEach(([inter, d]) => {
         const mAdmon = diffMeses(d.ultAdmon)
         const mVeh   = d.tieneVeh ? diffMeses(d.ultVeh) : -1
+        // Filtro exacto: el residente debe tener EXACTAMENTE minMeses meses en mora
+        // (>= minMeses y < minMeses+1, lo que para enteros = === minMeses)
         let incluir = false
-        if (tipo === 'admon')    incluir = mAdmon >= minMeses
-        else if (tipo === 'vehiculo') incluir = d.tieneVeh && mVeh >= minMeses
-        else incluir = (mAdmon >= minMeses) || (d.tieneVeh && mVeh >= minMeses)
+        if (tipo === 'admon')         incluir = mAdmon === minMeses
+        else if (tipo === 'vehiculo') incluir = d.tieneVeh && mVeh === minMeses
+        else incluir = (mAdmon === minMeses) || (d.tieneVeh && mVeh === minMeses)
         if (incluir) rows.push({ key: inter, inter, nombre: d.nombre, ultAdmon: d.ultAdmon, mAdmon, ultVeh: d.ultVeh, mVeh, tieneVeh: d.tieneVeh })
       })
 
       setResultados(rows)
       const tipoLbl = tipo === 'admon' ? 'Solo Admón' : tipo === 'vehiculo' ? 'Solo Vehículo' : 'Admón + Vehículo'
-      setFiltroLabel(`Mínimo ${minMeses} mes(es) · ${tipoLbl} — ${rows.length} registro(s)`)
+      setFiltroLabel(`${minMeses} mes(es) exacto · ${tipoLbl} — ${rows.length} registro(s)`)
     } catch { message.error('Error al cargar datos.') }
     setLoading(false)
   }
@@ -193,12 +195,12 @@ export default function Morosos() {
           <Row gutter={[24, 16]} align="bottom">
             <Col>
               <div style={{ marginBottom: 4 }}>
-                <Text style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.8px', textTransform: 'uppercase', color: '#6b6b66', fontFamily: 'IBM Plex Mono, monospace' }}>Meses mínimos sin pagar</Text>
+                <Text style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.8px', textTransform: 'uppercase', color: '#6b6b66', fontFamily: 'IBM Plex Mono, monospace' }}>Meses exactos en mora</Text>
               </div>
               <Space>
                 <InputNumber min={1} max={24} value={minMeses} onChange={setMinMeses}
                   style={{ width: 80, fontSize: 18, fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace', textAlign: 'center' }} />
-                <Text type="secondary">mes(es) o más</Text>
+                <Text type="secondary">mes(es) exacto</Text>
               </Space>
             </Col>
             <Col>
