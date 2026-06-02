@@ -7,6 +7,7 @@ import {
 import { SaveOutlined, ClearOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { api } from '../services/api'
+import ReciboModal from '../components/ReciboModal'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -79,6 +80,7 @@ function TabIngreso({ habitantes, personal, totales, onGuardado }) {
   const [loading, setLoading] = useState(false)
   const [campos, setCampos] = useState({ admon: true, vehiculo: true })
   const [totalPagar, setTotalPagar] = useState(0)
+  const [recibo, setRecibo] = useState(null)  // datos del recibo para imprimir
 
   function calcTotal() {
     const a = form.getFieldValue('vlr_admon') || 0
@@ -121,9 +123,9 @@ function TabIngreso({ habitantes, personal, totales, onGuardado }) {
     }
     setLoading(true)
     try {
-      const res = await api.saveIngreso(datos)
-      message.success(res.mensaje)
+      await api.saveIngreso(datos)
       onGuardado()
+      setRecibo(datos)   // ← abre modal del recibo
       limpiar()
     } catch (e) {
       message.error(e.message || 'Error de conexión con la API.')
@@ -151,6 +153,7 @@ function TabIngreso({ habitantes, personal, totales, onGuardado }) {
   }
 
   return (
+    <>
     <Form
       form={form}
       layout="vertical"
@@ -260,6 +263,9 @@ function TabIngreso({ habitantes, personal, totales, onGuardado }) {
         <Col span={8}><Button block icon={<CloseOutlined />} onClick={limpiar} style={{ background: '#4a4a4a', borderColor: '#4a4a4a', color: '#fff' }}>Cancelar</Button></Col>
       </Row>
     </Form>
+
+    <ReciboModal datos={recibo} onClose={() => setRecibo(null)} />
+    </>
   )
 }
 
