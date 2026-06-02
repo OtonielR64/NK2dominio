@@ -100,12 +100,12 @@ export default function Morosos() {
 
       cacheIng.current.forEach(r => {
         const inter = String(r.interior).trim()
-        const cod = String(r.cod_concepto).trim()
-        const cantidad = parseInt(r.cantidad) || 1
+        const cod   = String(r.cod_concepto).trim()
         if (!dict[inter]) return
         const fechaBase = mesStrADate(String(r.mes_pago).trim())
         if (!fechaBase) return
-        const fechaFin = new Date(fechaBase.getFullYear(), fechaBase.getMonth() + cantidad - 1, 1)
+        // cantidad es solo informativo para el valor; no avanza el mes pagado
+        const fechaFin = fechaBase
         const esAdmon = CONC_CASA.includes(cod) || CONC_AMBOS.includes(cod)
         const esVeh   = CONC_VEH.includes(cod) || CONC_AMBOS.includes(cod)
         if (esAdmon && (!dict[inter].ultAdmon || fechaFin > dict[inter].ultAdmon)) dict[inter].ultAdmon = fechaFin
