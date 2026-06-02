@@ -421,10 +421,21 @@ function TabResidentes({ datos, onActualizar }) {
   const [form] = Form.useForm()
   const [saving, setSaving]   = useState(false)
 
+  // Ordenar: numéricos primero (por valor numérico), alfanuméricos al final (por texto)
+  function sortInterior(a, b) {
+    const ia = String(a.interior), ib = String(b.interior)
+    const numA = /^\d+$/.test(ia), numB = /^\d+$/.test(ib)
+    if (numA && numB)  return parseInt(ia) - parseInt(ib)
+    if (numA && !numB) return -1
+    if (!numA && numB) return 1
+    return ia.localeCompare(ib)
+  }
+
   const filtrado = useMemo(() => {
-    if (!buscar) return datos
-    const q = buscar.toLowerCase()
-    return datos.filter(r => String(r.interior).toLowerCase().includes(q) || r.nombre.toLowerCase().includes(q))
+    const base = buscar
+      ? datos.filter(r => String(r.interior).toLowerCase().includes(buscar.toLowerCase()) || r.nombre.toLowerCase().includes(buscar.toLowerCase()))
+      : [...datos]
+    return base.sort(sortInterior)
   }, [datos, buscar])
 
   function abrirAdd() { form.resetFields(); setEditRec(null); setModal('add') }
@@ -452,7 +463,7 @@ function TabResidentes({ datos, onActualizar }) {
   }
 
   const columns = [
-    { title: 'Interior', dataIndex: 'interior', key: 'int',  width: 100, sorter: (a,b) => String(a.interior).localeCompare(String(b.interior)), render: v => <Tag color="blue">{v}</Tag> },
+    { title: 'Interior', dataIndex: 'interior', key: 'int',  width: 100, defaultSortOrder: 'ascend', sorter: sortInterior, render: v => <Tag color="blue">{v}</Tag> },
     { title: 'Nombre',   dataIndex: 'nombre',   key: 'nom',  sorter: (a,b) => a.nombre.localeCompare(b.nombre) },
     { title: 'PIN',      dataIndex: 'hasPin',   key: 'pin',  width: 110, render: v => v ? <Tag color="green">✓ Asignado</Tag> : <Tag color="orange">Sin PIN</Tag> },
     { title: 'Acciones', key: 'acc', width: 110, fixed: 'right',
