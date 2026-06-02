@@ -137,7 +137,7 @@ export default function MiCuenta() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#1e2228', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#2e3440', display: 'flex', flexDirection: 'column' }}>
 
       {/* HEADER */}
       <div style={{ background: '#1a1a18', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
