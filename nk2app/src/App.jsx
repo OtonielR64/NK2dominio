@@ -31,6 +31,11 @@ export default function App() {
           borderRadius: 6,
           fontFamily: 'IBM Plex Sans, sans-serif',
         },
+        components: {
+          Card: {
+            boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+          },
+        },
       }}
     >
       <BrowserRouter>

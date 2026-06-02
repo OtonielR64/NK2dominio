@@ -100,7 +100,7 @@ export default function Login() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#f4f3f0',
+      minHeight: '100vh', background: '#1e2228',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24,
     }}>
       <Card style={{ width: '100%', maxWidth: 400, padding: 0 }} styles={{ body: { padding: 0 } }} bordered>
