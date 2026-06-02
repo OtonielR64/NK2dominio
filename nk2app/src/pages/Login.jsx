@@ -76,15 +76,15 @@ export default function Login() {
       children: (
         <>
           <Text style={{ display: 'block', fontSize: 12, color: '#6b6b66', marginBottom: 14, fontFamily: 'IBM Plex Mono, monospace' }}>
-            Consulta tus pagos con tu número de interior y PIN.
+            Consulta tus pagos con tu número de interior y código de acceso.
           </Text>
           <Form onFinish={handleResidente} layout="vertical" onChange={() => setErrorRes('')}>
             <Form.Item label="N° Interior" name="interior" rules={[{ required: true, message: 'Requerido' }]}>
               <Input placeholder="Ej: 17, 67A" size="large" autoComplete="off" />
             </Form.Item>
-            <Form.Item label="PIN" name="pin" rules={[{ required: true, message: 'Requerido' }]}
+            <Form.Item label="Código de acceso" name="pin" rules={[{ required: true, message: 'Requerido' }]}
               validateStatus={errorRes ? 'error' : ''} help={errorRes || ''}>
-              <Input placeholder="PIN" size="large" maxLength={10} autoComplete="off" inputMode="numeric" />
+              <Input placeholder="Ej: 1234" size="large" maxLength={10} autoComplete="off" inputMode="numeric" />
             </Form.Item>
             <Form.Item style={{ marginBottom: 0 }}>
               <Button type="primary" htmlType="submit" block size="large" loading={loadingRes}

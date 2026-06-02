@@ -482,8 +482,8 @@ function TabResidentes({ datos, onActualizar }) {
             <Col span={10}><Form.Item label="Interior" name="interior" rules={[{ required: true, message: 'Requerido' }]}><Input placeholder="Ej: 17, 67A" disabled={modal === 'edit'} /></Form.Item></Col>
             <Col span={14}><Form.Item label="Nombre completo" name="nombre" rules={[{ required: true, message: 'Requerido' }]}><Input placeholder="Ej: JUAN PÉREZ" /></Form.Item></Col>
           </Row>
-          <Form.Item label="PIN" name="pin" extra={modal === 'edit' ? 'Deja vacío para conservar el PIN actual' : 'PIN numérico para acceso del residente'}>
-            <Input placeholder="PIN numérico" maxLength={10} autoComplete="off" inputMode="numeric" />
+          <Form.Item label="Código de acceso" name="pin" extra={modal === 'edit' ? 'Deja vacío para conservar el código actual' : 'Código numérico para acceso del residente'}>
+            <Input placeholder="Ej: 1234" maxLength={10} autoComplete="off" inputMode="numeric" />
           </Form.Item>
           <Row justify="end" gutter={8}>
             <Col><Button onClick={() => setModal(null)}>Cancelar</Button></Col>
