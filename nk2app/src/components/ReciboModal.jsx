@@ -11,7 +11,7 @@ const fmtFecha = f => {
 
 // ── Estilos del recibo ───────────────────────────────────────────────────
 const s = {
-  wrap:    { fontFamily: 'monospace', fontSize: 12, width: 280, margin: '0 auto', padding: '10px 8px', background: '#fff', lineHeight: 1.6 },
+  wrap:    { fontFamily: 'monospace', fontSize: 11, width: 210, margin: '0 auto', padding: '8px 6px', background: '#fff', lineHeight: 1.5 },
   center:  { textAlign: 'center' },
   bold:    { fontWeight: 700 },
   line:    { borderTop: '1px dashed #000', margin: '6px 0' },
@@ -123,10 +123,10 @@ export default function ReciboModal({ datos, onClose }) {
         <title>Recibo N° ${datos?.factura}</title>
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { font-family: monospace; font-size: 12px; width: 280px; padding: 8px; }
+          body { font-family: monospace; font-size: 11px; width: 210px; padding: 6px; }
           @media print {
-            @page { size: 80mm auto; margin: 2mm; }
-            body { width: 80mm; }
+            @page { size: 58mm auto; margin: 1mm 2mm; }
+            body { width: 58mm; font-size: 10px; padding: 0; }
           }
         </style>
       </head>
@@ -154,7 +154,7 @@ export default function ReciboModal({ datos, onClose }) {
           </Button>
         </Space>
       }
-      width={360}
+      width={300}
       destroyOnHidden
     >
       <div style={{ background: '#f9f9f9', border: '1px solid #ddd', borderRadius: 6, padding: 8 }}>
