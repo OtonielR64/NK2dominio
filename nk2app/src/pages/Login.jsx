@@ -84,7 +84,7 @@ export default function Login() {
             </Form.Item>
             <Form.Item label="PIN" name="pin" rules={[{ required: true, message: 'Requerido' }]}
               validateStatus={errorRes ? 'error' : ''} help={errorRes || ''}>
-              <Input.Password placeholder="••••" size="large" autoComplete="off" />
+              <Input placeholder="PIN" size="large" maxLength={10} autoComplete="off" inputMode="numeric" />
             </Form.Item>
             <Form.Item style={{ marginBottom: 0 }}>
               <Button type="primary" htmlType="submit" block size="large" loading={loadingRes}
