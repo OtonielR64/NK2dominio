@@ -13,6 +13,16 @@ const { TextArea } = Input
 
 const fmt = n => '$ ' + Math.round(n || 0).toLocaleString('es-CO')
 
+// Ordenar interiores: numéricos primero (1,2,3...) y alfanuméricos al final (67A,67B...)
+function sortInterior(a, b) {
+  const ia = String(a.interior ?? a), ib = String(b.interior ?? b)
+  const numA = /^\d+$/.test(ia), numB = /^\d+$/.test(ib)
+  if (numA && numB)  return parseInt(ia) - parseInt(ib)
+  if (numA && !numB) return -1
+  if (!numA && numB) return 1
+  return ia.localeCompare(ib)
+}
+
 const CONCEPTOS_ING = [
   { value: '11', label: '11 — Conserjería (casa)' },
   { value: '12', label: '12 — Conserjería (vehículo)' },
@@ -168,7 +178,7 @@ function TabIngreso({ habitantes, personal, totales, onGuardado }) {
             <Select
               showSearch placeholder="-- seleccionar --" optionFilterProp="label"
               onChange={onInteriorChange}
-              options={habitantes.map(h => ({ value: h.interior, label: `${h.interior} — ${h.nombre}` }))}
+              options={[...habitantes].sort(sortInterior).map(h => ({ value: h.interior, label: `${h.interior} — ${h.nombre}` }))}
             />
           </Form.Item>
         </Col>

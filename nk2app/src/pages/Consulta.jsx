@@ -15,6 +15,16 @@ const { Text } = Typography
 const { RangePicker } = DatePicker
 
 const fmt = n => '$ ' + Math.round(parseFloat(n) || 0).toLocaleString('es-CO')
+
+// Ordenar interiores: numéricos primero (1,2,3...) y alfanuméricos al final (67A,67B...)
+function sortInterior(a, b) {
+  const ia = String(a.interior ?? a), ib = String(b.interior ?? b)
+  const numA = /^\d+$/.test(ia), numB = /^\d+$/.test(ib)
+  if (numA && numB)  return parseInt(ia) - parseInt(ib)
+  if (numA && !numB) return -1
+  if (!numA && numB) return 1
+  return ia.localeCompare(ib)
+}
 const fmtMes = m => {
   if (!m) return ''
   const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
@@ -182,7 +192,7 @@ function TabIngresos({ datos, habitantes, onActualizar }) {
             <div style={{ fontSize: 11, color: '#6b6b66', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.8px', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 600 }}>Interior</div>
             <Select allowClear placeholder="Todos" style={{ width: '100%' }} value={filtros.interior || undefined}
               onChange={v => setFiltros(f => ({ ...f, interior: v || '' }))}
-              options={habitantes.map(h => ({ value: h.interior, label: `${h.interior} — ${h.nombre}` }))}
+              options={[...habitantes].sort(sortInterior).map(h => ({ value: h.interior, label: `${h.interior} — ${h.nombre}` }))}
               showSearch optionFilterProp="label" />
           </Col>
           <Col xs={24} sm={12} md={4}>
@@ -420,16 +430,6 @@ function TabResidentes({ datos, onActualizar }) {
   const [editRec, setEditRec] = useState(null)
   const [form] = Form.useForm()
   const [saving, setSaving]   = useState(false)
-
-  // Ordenar: numéricos primero (por valor numérico), alfanuméricos al final (por texto)
-  function sortInterior(a, b) {
-    const ia = String(a.interior), ib = String(b.interior)
-    const numA = /^\d+$/.test(ia), numB = /^\d+$/.test(ib)
-    if (numA && numB)  return parseInt(ia) - parseInt(ib)
-    if (numA && !numB) return -1
-    if (!numA && numB) return 1
-    return ia.localeCompare(ib)
-  }
 
   const filtrado = useMemo(() => {
     const base = buscar
