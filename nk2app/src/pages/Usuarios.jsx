@@ -193,7 +193,7 @@ export default function Usuarios() {
           initialValues={{ rol: 'admin' }}>
           <Form.Item label="Nombre de usuario" name="username"
             rules={[{ required: true, message: 'Requerido' }, { pattern: /^\S+$/, message: 'Sin espacios' }]}>
-            <Input placeholder="Ej: MariaG" autoFocus autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} />
+            <Input placeholder="Ej: MariaG" autoFocus type="search" autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} />
           </Form.Item>
           <Form.Item label="Rol" name="rol" rules={[{ required: true }]}>
             <Select>
