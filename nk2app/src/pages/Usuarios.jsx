@@ -62,14 +62,14 @@ export default function Usuarios() {
   // ── Editar (rol / activo) ──────────────────────────────────────────────────
   function abrirEditar(u) {
     setEditando(u)
-    formEditar.setFieldsValue({ rol: u.rol, activo: u.activo == 1 })
+    formEditar.setFieldsValue({ rol: u.rol, activo: Number(u.activo) })
     setModalEditar(true)
   }
 
   async function handleEditar(values) {
     setSavingEditar(true)
     try {
-      const res = await api.updateUsuario({ id: editando.id, rol: values.rol, activo: values.activo })
+      const res = await api.updateUsuario({ id: editando.id, rol: values.rol, activo: values.activo === 1 ? true : false })
       message.success(res.mensaje)
       setModalEditar(false)
       cargar()
@@ -188,18 +188,18 @@ export default function Usuarios() {
       <Modal
         title="Crear nuevo usuario" open={modalCrear}
         onCancel={() => setModalCrear(false)} footer={null}
-        destroyOnClose
       >
-        <Form form={formCrear} layout="vertical" onFinish={handleCrear}>
+        <Form form={formCrear} layout="vertical" onFinish={handleCrear}
+          initialValues={{ rol: 'admin' }}>
           <Form.Item label="Nombre de usuario" name="username"
             rules={[{ required: true, message: 'Requerido' }, { pattern: /^\S+$/, message: 'Sin espacios' }]}>
             <Input placeholder="Ej: MariaG" autoFocus autoComplete="off" />
           </Form.Item>
-          <Form.Item label="Rol" name="rol" initialValue="visor" rules={[{ required: true }]}>
-            <Select options={[
-              { value: 'admin', label: 'Administrador — acceso completo' },
-              { value: 'visor', label: 'Visor — solo consulta e informes' },
-            ]} />
+          <Form.Item label="Rol" name="rol" rules={[{ required: true }]}>
+            <Select>
+              <Select.Option value="admin">Administrador — acceso completo</Select.Option>
+              <Select.Option value="visor">Visor — solo consulta e informes</Select.Option>
+            </Select>
           </Form.Item>
           <Divider style={{ margin: '12px 0' }} />
           <Alert
@@ -226,20 +226,19 @@ export default function Usuarios() {
       <Modal
         title={`Editar — ${editando?.username}`} open={modalEditar}
         onCancel={() => setModalEditar(false)} footer={null}
-        destroyOnClose
       >
         <Form form={formEditar} layout="vertical" onFinish={handleEditar}>
           <Form.Item label="Rol" name="rol" rules={[{ required: true }]}>
-            <Select options={[
-              { value: 'admin', label: 'Administrador — acceso completo' },
-              { value: 'visor', label: 'Visor — solo consulta e informes' },
-            ]} />
+            <Select>
+              <Select.Option value="admin">Administrador — acceso completo</Select.Option>
+              <Select.Option value="visor">Visor — solo consulta e informes</Select.Option>
+            </Select>
           </Form.Item>
           <Form.Item label="Estado" name="activo" rules={[{ required: true }]}>
-            <Select options={[
-              { value: true,  label: 'Activo' },
-              { value: false, label: 'Inactivo (no puede iniciar sesión)' },
-            ]} />
+            <Select>
+              <Select.Option value={1}>Activo</Select.Option>
+              <Select.Option value={0}>Inactivo (no puede iniciar sesión)</Select.Option>
+            </Select>
           </Form.Item>
           <Form.Item style={{ marginBottom: 0 }}>
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
