@@ -65,4 +65,9 @@ export const api = {
 
   // Totales
   getTotales:      ()     => get('/totales'),
+
+  // Bloqueo de formularios
+  getLock:         (form) => get('/locks?formulario=' + form),
+  setLock:         (body) => post('/locks', body),
+  releaseLock:     (body) => del('/locks', body),
 }

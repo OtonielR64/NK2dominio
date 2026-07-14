@@ -1,12 +1,15 @@
+import { useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Typography } from 'antd'
-import { logout, isAdmin, getRole } from '../services/auth'
+import { logout, isAdmin, getRole, getUsername } from '../services/auth'
 
 const { Text } = Typography
 
 const hoy = new Date().toLocaleDateString('es-CO', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
 })
+
+const ADMINS = ['OtonielR', 'PatriciaN', 'EloisaG']
 
 const NAV = [
   { to: '/',             label: '📝 Formularios',      color: '#1a5c2a', adminOnly: true  },
@@ -40,6 +43,32 @@ export default function AppLayout({ children }) {
   const navigate = useNavigate()
   const location = useLocation()
   const admin    = isAdmin()
+  const role     = getRole()
+
+  // ── Auto-cierre por inactividad ──────────────────────────────────────────
+  useEffect(() => {
+    const user    = getUsername()
+    const minutos = ADMINS.includes(user) ? 6 : 3
+    const T       = minutos * 60 * 1000
+    let timer
+
+    const reset = () => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        logout()
+        navigate('/login', { replace: true })
+      }, T)
+    }
+
+    const eventos = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart']
+    eventos.forEach(e => window.addEventListener(e, reset, { passive: true }))
+    reset()
+
+    return () => {
+      clearTimeout(timer)
+      eventos.forEach(e => window.removeEventListener(e, reset))
+    }
+  }, [])
 
   function cerrarSesion() {
     logout()
@@ -84,7 +113,7 @@ export default function AppLayout({ children }) {
               </button>
             )
           })}
-          {getRole() !== 'residente' && (
+          {role !== 'residente' && (
             <button onClick={() => navigate('/cambiar-clave')}
               style={{ ...btnBase, background: 'transparent', border: '1px solid #666', color: '#ccc' }}
               onMouseEnter={e => e.currentTarget.style.opacity = '.8'}

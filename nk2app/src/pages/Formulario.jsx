@@ -1,13 +1,48 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Form, Input, InputNumber, Select, DatePicker, Button,
-  Card, Tabs, Row, Col, Typography, Divider,
+  Card, Tabs, Row, Col, Typography, Divider, Alert,
   message, Spin
 } from 'antd'
 import { SaveOutlined, ClearOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { api } from '../services/api'
+import { getUsername } from '../services/auth'
 import ReciboModal from '../components/ReciboModal'
+
+// ── Hook de bloqueo de formulario ────────────────────────────────────────────
+function useFormLock(formulario) {
+  const [bloqueadoPor, setBloqueadoPor] = useState(null)
+  const timerRef = useRef(null)
+  const miUsuario = getUsername()
+
+  useEffect(() => {
+    let activo = true
+
+    async function verificar() {
+      try {
+        const res = await api.setLock({ formulario })
+        if (!activo) return
+        if (res?.taken && res.lock?.usuario !== miUsuario) {
+          setBloqueadoPor(res.lock.usuario)
+        } else {
+          setBloqueadoPor(null)
+        }
+      } catch { /* silencioso */ }
+    }
+
+    verificar()
+    timerRef.current = setInterval(verificar, 8000)
+
+    return () => {
+      activo = false
+      clearInterval(timerRef.current)
+      api.releaseLock({ formulario }).catch(() => {})
+    }
+  }, [formulario])
+
+  return bloqueadoPor
+}
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -75,7 +110,7 @@ function estadoCampos(cod) {
 // ═══════════════════════════════════════════
 // TAB INGRESO
 // ═══════════════════════════════════════════
-function TabIngreso({ habitantes, personal, totales, onGuardado }) {
+function TabIngreso({ habitantes, personal, totales, onGuardado, bloqueado }) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [campos, setCampos] = useState({ admon: true, vehiculo: true })
@@ -257,8 +292,13 @@ function TabIngreso({ habitantes, personal, totales, onGuardado }) {
         </>}
       </div>
 
+      {bloqueado && (
+        <Alert type="warning" showIcon style={{ marginBottom: 12 }}
+          message={`🔒 ${bloqueado} está usando este formulario ahora mismo. Espera un momento para evitar conflictos.`} />
+      )}
+
       <Row gutter={10}>
-        <Col span={8}><Button block type="primary" htmlType="submit" loading={loading} icon={<SaveOutlined />} style={{ background: '#1a5c2a', borderColor: '#1a5c2a' }}>Guardar</Button></Col>
+        <Col span={8}><Button block type="primary" htmlType="submit" loading={loading} disabled={!!bloqueado} icon={<SaveOutlined />} style={{ background: '#1a5c2a', borderColor: '#1a5c2a' }}>Guardar</Button></Col>
         <Col span={8}><Button block icon={<ClearOutlined />} onClick={limpiar}>Limpiar</Button></Col>
         <Col span={8}><Button block icon={<CloseOutlined />} onClick={limpiar} style={{ background: '#4a4a4a', borderColor: '#4a4a4a', color: '#fff' }}>Cancelar</Button></Col>
       </Row>
@@ -272,7 +312,7 @@ function TabIngreso({ habitantes, personal, totales, onGuardado }) {
 // ═══════════════════════════════════════════
 // TAB SALIDA
 // ═══════════════════════════════════════════
-function TabSalida({ personal, totales, onGuardado }) {
+function TabSalida({ personal, totales, onGuardado, bloqueado }) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [vals, setVals] = useState({ total: 0, abono: 0 })
@@ -399,8 +439,13 @@ function TabSalida({ personal, totales, onGuardado }) {
         </>}
       </div>
 
+      {bloqueado && (
+        <Alert type="warning" showIcon style={{ marginBottom: 12 }}
+          message={`🔒 ${bloqueado} está usando este formulario ahora mismo. Espera un momento para evitar conflictos.`} />
+      )}
+
       <Row gutter={10}>
-        <Col span={8}><Button block type="primary" htmlType="submit" loading={loading} icon={<SaveOutlined />} style={{ background: '#7a1a1a', borderColor: '#7a1a1a' }}>Guardar</Button></Col>
+        <Col span={8}><Button block type="primary" htmlType="submit" loading={loading} disabled={!!bloqueado} icon={<SaveOutlined />} style={{ background: '#7a1a1a', borderColor: '#7a1a1a' }}>Guardar</Button></Col>
         <Col span={8}><Button block icon={<ClearOutlined />} onClick={limpiar}>Limpiar</Button></Col>
         <Col span={8}><Button block icon={<CloseOutlined />} onClick={limpiar} style={{ background: '#4a4a4a', borderColor: '#4a4a4a', color: '#fff' }}>Cancelar</Button></Col>
       </Row>
@@ -416,6 +461,9 @@ export default function Formulario() {
   const [personal,     setPersonal]     = useState([])
   const [totales,      setTotales]      = useState(null)
   const [loadingInit,  setLoadingInit]  = useState(true)
+  const [tabActivo,    setTabActivo]    = useState('ing')
+
+  const bloqueadoPor = useFormLock(tabActivo === 'ing' ? 'ingresos' : 'salidas')
 
   async function cargarDatos() {
     try {
@@ -438,12 +486,12 @@ export default function Formulario() {
     {
       key: 'ing',
       label: <span style={{ color: '#1a5c2a', fontWeight: 500 }}>Registro de Ingreso</span>,
-      children: loadingInit ? spinner : <TabIngreso habitantes={habitantes} personal={personal} totales={totales} onGuardado={cargarDatos} />,
+      children: loadingInit ? spinner : <TabIngreso habitantes={habitantes} personal={personal} totales={totales} onGuardado={cargarDatos} bloqueado={bloqueadoPor} />,
     },
     {
       key: 'sal',
       label: <span style={{ color: '#7a1a1a', fontWeight: 500 }}>Registro de Salida</span>,
-      children: loadingInit ? spinner : <TabSalida personal={personal} totales={totales} onGuardado={cargarDatos} />,
+      children: loadingInit ? spinner : <TabSalida personal={personal} totales={totales} onGuardado={cargarDatos} bloqueado={bloqueadoPor} />,
     },
   ]
 
@@ -456,7 +504,7 @@ export default function Formulario() {
           </Text>
         </div>
         <div style={{ padding: '0 18px 18px' }}>
-          <Tabs items={tabs} destroyInactiveTabPane={false} />
+          <Tabs items={tabs} destroyInactiveTabPane={false} activeKey={tabActivo} onChange={setTabActivo} />
         </div>
       </Card>
     </div>

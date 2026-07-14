@@ -132,6 +132,11 @@ try {
         // Totales
         $uri === '/totales'     && $method === 'GET' => route_totales(),
 
+        // Bloqueo de formularios
+        $uri === '/locks' && $method === 'GET'    => route_get_lock(),
+        $uri === '/locks' && $method === 'POST'   => route_set_lock(),
+        $uri === '/locks' && $method === 'DELETE' => route_release_lock(),
+
         default => json_error('Ruta no encontrada', 404),
     };
 } catch (PDOException $e) {
@@ -583,6 +588,63 @@ function route_save_abono(): never {
 // ═══════════════════════════════════════════════════════════════════════════
 // RUTAS — TOTALES
 // ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RUTAS — BLOQUEO DE FORMULARIOS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function route_get_lock(): never {
+    auth_required();
+    $form = trim($_GET['formulario'] ?? '');
+    if (!$form) json_error('formulario requerido');
+
+    // Limpiar locks expirados primero
+    db()->prepare('DELETE FROM form_locks WHERE expires_at < NOW()')->execute();
+
+    $stmt = db()->prepare('SELECT usuario, expires_at FROM form_locks WHERE formulario = ?');
+    $stmt->execute([$form]);
+    $lock = $stmt->fetch();
+    json_ok($lock ?: null);
+}
+
+function route_set_lock(): never {
+    $p       = auth_required();
+    $b       = body();
+    $form    = trim($b['formulario'] ?? '');
+    $usuario = $p['username'];
+    if (!$form) json_error('formulario requerido');
+
+    // Limpiar locks expirados
+    db()->prepare('DELETE FROM form_locks WHERE expires_at < NOW()')->execute();
+
+    // Revisar si hay lock de otro usuario
+    $stmt = db()->prepare('SELECT usuario FROM form_locks WHERE formulario = ?');
+    $stmt->execute([$form]);
+    $existing = $stmt->fetch();
+
+    if ($existing && $existing['usuario'] !== $usuario) {
+        json_ok(['taken' => true, 'lock' => $existing]);
+    }
+
+    // Insertar o renovar lock (expira en 20 segundos)
+    db()->prepare(
+        'INSERT INTO form_locks (formulario, usuario, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 20 SECOND))
+         ON DUPLICATE KEY UPDATE usuario=VALUES(usuario), expires_at=VALUES(expires_at)'
+    )->execute([$form, $usuario]);
+
+    json_ok(['taken' => false]);
+}
+
+function route_release_lock(): never {
+    $p    = auth_required();
+    $b    = body();
+    $form = trim($b['formulario'] ?? '');
+    if (!$form) json_ok(['mensaje' => 'ok']);
+
+    db()->prepare('DELETE FROM form_locks WHERE formulario = ? AND usuario = ?')
+        ->execute([$form, $p['username']]);
+    json_ok(['mensaje' => 'Lock liberado']);
+}
 
 function route_totales(): never {
     auth_required();

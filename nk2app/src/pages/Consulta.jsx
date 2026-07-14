@@ -5,11 +5,12 @@ import {
 } from 'antd'
 import {
   SearchOutlined, ClearOutlined, FileExcelOutlined,
-  EditOutlined, DeleteOutlined, SaveOutlined, PlusOutlined, UserOutlined
+  EditOutlined, DeleteOutlined, SaveOutlined, PlusOutlined, UserOutlined, PrinterOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { api } from '../services/api'
 import { isAdmin } from '../services/auth'
+import ReciboModal from '../components/ReciboModal'
 
 const { Text } = Typography
 const { RangePicker } = DatePicker
@@ -91,6 +92,7 @@ function TabIngresos({ datos, habitantes, onActualizar }) {
   const [editRecord, setEditRecord] = useState(null)
   const [editForm] = Form.useForm()
   const [saving, setSaving] = useState(false)
+  const [reciboImprimir, setReciboImprimir] = useState(null)
 
   const filtrado = useMemo(() => {
     let d = [...datos]
@@ -174,9 +176,15 @@ function TabIngresos({ datos, habitantes, onActualizar }) {
     { title: 'Total',     dataIndex: 'total',        key: 'total',     render: v => <Text strong style={{ color: '#1a5c2a' }}>{fmt(v)}</Text>, align: 'right', sorter: (a,b) => (parseFloat(a.total)||0) - (parseFloat(b.total)||0) },
     { title: 'Observación', dataIndex: 'observacion', key: 'obs', ellipsis: true, width: 160 },
     {
-      title: 'Acciones', key: 'acc', fixed: 'right', width: 110,
+      title: 'Acciones', key: 'acc', fixed: 'right', width: 140,
       render: (_, r) => (
         <Space size={4}>
+          <Button size="small" icon={<PrinterOutlined />} title="Reimprimir recibo" onClick={() => setReciboImprimir({
+            factura: r.factura, fecha: r.fecha, interior: r.interior, nombre: r.nombre,
+            administrador: r.administrador, cod_concepto: r.cod_concepto, concepto: r.concepto,
+            vlr_admon: r.vlr_admon, vlr_vehiculo: r.vlr_vehiculo, mes_pago: r.mes_pago,
+            cantidad: r.cantidad, total: r.total, observacion: r.observacion,
+          })} />
           <Button size="small" icon={<EditOutlined />} type="primary" ghost onClick={() => abrirEdit(r)} style={{ borderColor: '#854f0b', color: '#854f0b' }} />
           <Button size="small" icon={<DeleteOutlined />} danger onClick={() => eliminar(r)} />
         </Space>
@@ -186,6 +194,7 @@ function TabIngresos({ datos, habitantes, onActualizar }) {
 
   return (
     <>
+      <ReciboModal datos={reciboImprimir} onClose={() => setReciboImprimir(null)} />
       <Card size="small" style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]} align="bottom">
           <Col xs={24} sm={12} md={6}>
