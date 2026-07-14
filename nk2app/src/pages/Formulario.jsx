@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   Form, Input, InputNumber, Select, DatePicker, Button,
-  Card, Tabs, Row, Col, Typography, Divider, Alert,
+  Card, Row, Col, Typography, Divider, Alert,
   message, Spin
 } from 'antd'
 import { SaveOutlined, ClearOutlined, CloseOutlined } from '@ant-design/icons'
@@ -461,9 +461,9 @@ export default function Formulario() {
   const [personal,     setPersonal]     = useState([])
   const [totales,      setTotales]      = useState(null)
   const [loadingInit,  setLoadingInit]  = useState(true)
-  const [tabActivo,    setTabActivo]    = useState('ing')
 
-  const bloqueadoPor = useFormLock(tabActivo === 'ing' ? 'ingresos' : 'salidas')
+  const bloqueadoIng = useFormLock('ingresos')
+  const bloqueadoSal = useFormLock('salidas')
 
   async function cargarDatos() {
     try {
@@ -482,29 +482,36 @@ export default function Formulario() {
   useEffect(() => { cargarDatos() }, [])
 
   const spinner = <div style={{ textAlign: 'center', padding: 40 }}><Spin /></div>
-  const tabs = [
-    {
-      key: 'ing',
-      label: <span style={{ color: '#1a5c2a', fontWeight: 500 }}>Registro de Ingreso</span>,
-      children: loadingInit ? spinner : <TabIngreso habitantes={habitantes} personal={personal} totales={totales} onGuardado={cargarDatos} bloqueado={bloqueadoPor} />,
-    },
-    {
-      key: 'sal',
-      label: <span style={{ color: '#7a1a1a', fontWeight: 500 }}>Registro de Salida</span>,
-      children: loadingInit ? spinner : <TabSalida personal={personal} totales={totales} onGuardado={cargarDatos} bloqueado={bloqueadoPor} />,
-    },
-  ]
 
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px' }}>
+    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 16px' }}>
       <Card styles={{ body: { padding: 0 } }} bordered style={{ overflow: 'hidden' }}>
         <div style={{ background: '#1a5c2a', padding: '10px 18px' }}>
           <Text style={{ color: '#fff', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase' }}>
             Registro — Nuevo Kennedy II Sector
           </Text>
         </div>
-        <div style={{ padding: '0 18px 18px' }}>
-          <Tabs items={tabs} destroyInactiveTabPane={false} activeKey={tabActivo} onChange={setTabActivo} />
+        <div style={{ padding: '18px' }}>
+          {loadingInit ? spinner : (
+            <Row gutter={32} align="top">
+              <Col xs={24} lg={12}>
+                <div style={{ borderBottom: '2px solid #1a5c2a', marginBottom: 16, paddingBottom: 6 }}>
+                  <Text style={{ color: '#1a5c2a', fontWeight: 600, fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                    Registro de Ingreso
+                  </Text>
+                </div>
+                <TabIngreso habitantes={habitantes} personal={personal} totales={totales} onGuardado={cargarDatos} bloqueado={bloqueadoIng} />
+              </Col>
+              <Col xs={24} lg={12}>
+                <div style={{ borderBottom: '2px solid #7a1a1a', marginBottom: 16, paddingBottom: 6 }}>
+                  <Text style={{ color: '#7a1a1a', fontWeight: 600, fontSize: 13, fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                    Registro de Salida
+                  </Text>
+                </div>
+                <TabSalida personal={personal} totales={totales} onGuardado={cargarDatos} bloqueado={bloqueadoSal} />
+              </Col>
+            </Row>
+          )}
         </div>
       </Card>
     </div>

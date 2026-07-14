@@ -235,9 +235,11 @@ function TabIngresos({ datos, habitantes, onActualizar }) {
       </Row>
 
       <Card size="small" styles={{ body: { padding: 0 } }}>
-        <Table dataSource={filtrado} columns={columns} rowKey="id" size="small" scroll={{ x: 1100 }}
-          pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `${t} registros` }}
-          locale={{ emptyText: 'No se encontraron registros' }} />
+        <div style={{ fontSize: 12 }}>
+          <Table dataSource={filtrado} columns={columns} rowKey="id" size="small" scroll={{ x: 1100 }}
+            pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `${t} registros` }}
+            locale={{ emptyText: 'No se encontraron registros' }} />
+        </div>
       </Card>
 
       <Modal open={!!editRecord} title="Editar Ingreso" onCancel={() => setEditRecord(null)} footer={null} width={700} destroyOnHidden>
@@ -402,9 +404,11 @@ function TabSalidas({ datos, onActualizar }) {
       </Row>
 
       <Card size="small" styles={{ body: { padding: 0 } }}>
-        <Table dataSource={filtrado} columns={columns} rowKey="id" size="small" scroll={{ x: 900 }}
-          pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `${t} registros` }}
-          locale={{ emptyText: 'No se encontraron registros' }} />
+        <div style={{ fontSize: 12 }}>
+          <Table dataSource={filtrado} columns={columns} rowKey="id" size="small" scroll={{ x: 900 }}
+            pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `${t} registros` }}
+            locale={{ emptyText: 'No se encontraron registros' }} />
+        </div>
       </Card>
 
       <Modal open={!!editRecord} title="Editar Salida" onCancel={() => setEditRecord(null)} footer={null} width={600} destroyOnHidden>
