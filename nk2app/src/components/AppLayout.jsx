@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Typography } from 'antd'
-import { logout, isAdmin, getRole, getUsername } from '../services/auth'
+import { logout, isAdmin, isSuperAdmin, getRole, getUsername } from '../services/auth'
 
 const { Text } = Typography
 
@@ -19,7 +19,7 @@ const NAV = [
   { to: '/abonos',       label: '💲 Abonos',            color: '#854f0b', adminOnly: true  },
   { to: '/informe-mensual', label: '📄 Informe general', color: '#2c5f8a', adminOnly: false },
   { to: '/reporte',      label: '📋 Rep. fechas',       color: '#5b3a8a', adminOnly: false },
-  { to: '/usuarios',     label: '👥 Usuarios',          color: '#4a1a6a', adminOnly: true  },
+  { to: '/usuarios',     label: '👥 Usuarios',          color: '#4a1a6a', adminOnly: true, superAdminOnly: true },
 ]
 
 const btnBase = {
@@ -42,8 +42,9 @@ const btnBase = {
 export default function AppLayout({ children }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const admin    = isAdmin()
-  const role     = getRole()
+  const admin      = isAdmin()
+  const superAdmin = isSuperAdmin()
+  const role       = getRole()
 
   // ── Auto-cierre por inactividad ──────────────────────────────────────────
   useEffect(() => {
@@ -75,7 +76,11 @@ export default function AppLayout({ children }) {
     navigate('/login', { replace: true })
   }
 
-  const visibleNav = NAV.filter(n => !n.adminOnly || admin)
+  const visibleNav = NAV.filter(n => {
+    if (n.superAdminOnly) return superAdmin
+    if (n.adminOnly)      return admin
+    return true
+  })
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#808080' }}>

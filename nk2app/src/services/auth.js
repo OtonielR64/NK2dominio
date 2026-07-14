@@ -21,7 +21,8 @@ export function logout() {
 export function getRole()     { return localStorage.getItem(ROLE_KEY) }
 export function getToken()    { return localStorage.getItem(TOKEN_KEY) }
 export function getUsername() { return localStorage.getItem(USER_KEY) }
-export function isAdmin()     { return getRole() === 'admin' }
+export function isSuperAdmin() { return getRole() === 'superadmin' }
+export function isAdmin()     { return getRole() === 'admin' || getRole() === 'superadmin' }
 export function isLoggedIn()  { return !!getToken() }
 
 export function mustChangePassword() {

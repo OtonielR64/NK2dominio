@@ -62,7 +62,13 @@ function auth_required(): array {
 
 function admin_required(): array {
     $p = auth_required();
-    if ($p['rol'] !== 'admin') json_error('Acceso denegado', 403);
+    if ($p['rol'] !== 'admin' && $p['rol'] !== 'superadmin') json_error('Acceso denegado', 403);
+    return $p;
+}
+
+function superadmin_required(): array {
+    $p = auth_required();
+    if ($p['rol'] !== 'superadmin') json_error('Acceso denegado', 403);
     return $p;
 }
 
@@ -201,7 +207,7 @@ function route_change_password(): never {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function route_get_usuarios(): never {
-    admin_required();
+    superadmin_required();
     $rows = db()->query(
         'SELECT id, username, rol, activo, must_change_password FROM usuarios ORDER BY id'
     )->fetchAll();
@@ -209,7 +215,7 @@ function route_get_usuarios(): never {
 }
 
 function route_create_usuario(): never {
-    admin_required();
+    superadmin_required();
     $b        = body();
     $username = trim($b['username'] ?? '');
     $password = $b['password'] ?? '';
@@ -231,7 +237,7 @@ function route_create_usuario(): never {
 }
 
 function route_update_usuario(): never {
-    $caller = admin_required();
+    $caller = superadmin_required();
     $b      = body();
     $id     = (int)($b['id'] ?? 0);
     if (!$id) json_error('ID requerido');
@@ -263,7 +269,7 @@ function route_update_usuario(): never {
 }
 
 function route_delete_usuario(): never {
-    $caller = admin_required();
+    $caller = superadmin_required();
     $b      = body();
     $id     = (int)($b['id'] ?? 0);
     if (!$id) json_error('ID requerido');

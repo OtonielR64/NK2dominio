@@ -15,9 +15,9 @@ import CambiarClave from './pages/CambiarClave'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
 
-function LayoutRoute({ children, adminOnly }) {
+function LayoutRoute({ children, adminOnly, superAdminOnly }) {
   return (
-    <ProtectedRoute adminOnly={adminOnly}>
+    <ProtectedRoute adminOnly={adminOnly} superAdminOnly={superAdminOnly}>
       <AppLayout>{children}</AppLayout>
     </ProtectedRoute>
   )
@@ -67,7 +67,7 @@ export default function App() {
             <LayoutRoute><Informe /></LayoutRoute>
           } />
           <Route path="/usuarios" element={
-            <LayoutRoute adminOnly><Usuarios /></LayoutRoute>
+            <LayoutRoute superAdminOnly><Usuarios /></LayoutRoute>
           } />
           <Route path="/cambiar-clave" element={
             <LayoutRoute><CambiarClave /></LayoutRoute>
