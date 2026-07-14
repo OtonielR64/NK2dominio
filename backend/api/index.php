@@ -91,8 +91,15 @@ $uri    = rtrim($uri, '/') ?: '/';
 try {
     match (true) {
         // Auth
-        $uri === '/auth/login'  && $method === 'POST' => route_login(),
-        $uri === '/auth/me'     && $method === 'GET'  => route_me(),
+        $uri === '/auth/login'           && $method === 'POST' => route_login(),
+        $uri === '/auth/me'              && $method === 'GET'  => route_me(),
+        $uri === '/auth/change-password' && $method === 'PUT'  => route_change_password(),
+
+        // Usuarios (admin)
+        $uri === '/usuarios' && $method === 'GET'    => route_get_usuarios(),
+        $uri === '/usuarios' && $method === 'POST'   => route_create_usuario(),
+        $uri === '/usuarios' && $method === 'PUT'    => route_update_usuario(),
+        $uri === '/usuarios' && $method === 'DELETE' => route_delete_usuario(),
 
         // Habitantes
         $uri === '/habitantes'  && $method === 'GET'    => route_get_habitantes(),
@@ -144,7 +151,7 @@ function route_login(): never {
 
     if (!$username || !$password) json_error('Usuario y contraseña requeridos');
 
-    $stmt = db()->prepare('SELECT id, username, password, rol FROM usuarios WHERE username = ? AND activo = 1');
+    $stmt = db()->prepare('SELECT id, username, password, rol, must_change_password FROM usuarios WHERE username = ? AND activo = 1');
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
@@ -152,19 +159,112 @@ function route_login(): never {
         json_error('Credenciales incorrectas', 401);
     }
 
+    $mustChange = (bool)$user['must_change_password'];
     $payload = [
-        'sub' => $user['id'],
-        'username' => $user['username'],
-        'rol'  => $user['rol'],
-        'iat'  => time(),
-        'exp'  => time() + JWT_EXP,
+        'sub'          => $user['id'],
+        'username'     => $user['username'],
+        'rol'          => $user['rol'],
+        'must_change'  => $mustChange,
+        'iat'          => time(),
+        'exp'          => time() + JWT_EXP,
     ];
-    json_ok(['token' => jwt_create($payload), 'rol' => $user['rol'], 'username' => $user['username']]);
+    json_ok([
+        'token'                => jwt_create($payload),
+        'rol'                  => $user['rol'],
+        'username'             => $user['username'],
+        'must_change_password' => $mustChange,
+    ]);
 }
 
 function route_me(): never {
     $p = auth_required();
     json_ok(['username' => $p['username'], 'rol' => $p['rol']]);
+}
+
+function route_change_password(): never {
+    $p    = auth_required();
+    $b    = body();
+    $pass = $b['password'] ?? '';
+    if (strlen($pass) < 6) json_error('La contraseña debe tener al menos 6 caracteres');
+    db()->prepare('UPDATE usuarios SET password=?, must_change_password=0 WHERE id=?')
+        ->execute([password_hash($pass, PASSWORD_BCRYPT), (int)$p['sub']]);
+    json_ok(['mensaje' => 'Contraseña actualizada correctamente']);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RUTAS — USUARIOS (solo admin)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function route_get_usuarios(): never {
+    admin_required();
+    $rows = db()->query(
+        'SELECT id, username, rol, activo, must_change_password FROM usuarios ORDER BY id'
+    )->fetchAll();
+    json_ok($rows);
+}
+
+function route_create_usuario(): never {
+    admin_required();
+    $b        = body();
+    $username = trim($b['username'] ?? '');
+    $password = $b['password'] ?? '';
+    $rol      = $b['rol'] ?? 'visor';
+
+    if (!$username) json_error('Nombre de usuario requerido');
+    if (!$password) json_error('Contraseña temporal requerida');
+    if (!in_array($rol, ['admin', 'visor'], true)) json_error('Rol inválido');
+
+    $chk = db()->prepare('SELECT id FROM usuarios WHERE username = ?');
+    $chk->execute([$username]);
+    if ($chk->fetch()) json_error('El usuario "' . $username . '" ya existe');
+
+    db()->prepare(
+        'INSERT INTO usuarios (username, password, rol, activo, must_change_password) VALUES (?,?,?,1,1)'
+    )->execute([$username, password_hash($password, PASSWORD_BCRYPT), $rol]);
+
+    json_ok(['mensaje' => 'Usuario "' . $username . '" creado. Debe cambiar su contraseña al primer inicio de sesión.']);
+}
+
+function route_update_usuario(): never {
+    $caller = admin_required();
+    $b      = body();
+    $id     = (int)($b['id'] ?? 0);
+    if (!$id) json_error('ID requerido');
+
+    // No puede desactivarse a sí mismo
+    if ($id === (int)$caller['sub'] && array_key_exists('activo', $b) && !(bool)$b['activo']) {
+        json_error('No puedes desactivar tu propia cuenta');
+    }
+
+    $fields = [];
+    $params = [];
+
+    if (array_key_exists('rol', $b)) {
+        if (!in_array($b['rol'], ['admin', 'visor'], true)) json_error('Rol inválido');
+        $fields[] = 'rol=?';    $params[] = $b['rol'];
+    }
+    if (array_key_exists('activo', $b)) {
+        $fields[] = 'activo=?'; $params[] = (int)(bool)$b['activo'];
+    }
+    if (!empty($b['nueva_password'])) {
+        $fields[] = 'password=?';           $params[] = password_hash($b['nueva_password'], PASSWORD_BCRYPT);
+        $fields[] = 'must_change_password=1';
+    }
+
+    if (!$fields) json_error('Nada que actualizar');
+    $params[] = $id;
+    db()->prepare('UPDATE usuarios SET ' . implode(',', $fields) . ' WHERE id=?')->execute($params);
+    json_ok(['mensaje' => 'Usuario actualizado correctamente']);
+}
+
+function route_delete_usuario(): never {
+    $caller = admin_required();
+    $b      = body();
+    $id     = (int)($b['id'] ?? 0);
+    if (!$id) json_error('ID requerido');
+    if ($id === (int)$caller['sub']) json_error('No puedes eliminar tu propia cuenta');
+    db()->prepare('DELETE FROM usuarios WHERE id=?')->execute([$id]);
+    json_ok(['mensaje' => 'Usuario eliminado correctamente']);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

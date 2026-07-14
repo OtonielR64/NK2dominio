@@ -1,6 +1,6 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Typography } from 'antd'
-import { logout, isAdmin } from '../services/auth'
+import { logout, isAdmin, getRole } from '../services/auth'
 
 const { Text } = Typography
 
@@ -16,6 +16,7 @@ const NAV = [
   { to: '/abonos',       label: '💲 Abonos',            color: '#854f0b', adminOnly: true  },
   { to: '/informe-mensual', label: '📄 Informe general', color: '#2c5f8a', adminOnly: false },
   { to: '/reporte',      label: '📋 Rep. fechas',       color: '#5b3a8a', adminOnly: false },
+  { to: '/usuarios',     label: '👥 Usuarios',          color: '#4a1a6a', adminOnly: true  },
 ]
 
 const btnBase = {
@@ -83,6 +84,14 @@ export default function AppLayout({ children }) {
               </button>
             )
           })}
+          {getRole() !== 'residente' && (
+            <button onClick={() => navigate('/cambiar-clave')}
+              style={{ ...btnBase, background: 'transparent', border: '1px solid #666', color: '#ccc' }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '.8'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+              🔑 Mi clave
+            </button>
+          )}
           <button onClick={cerrarSesion}
             style={{ ...btnBase, background: '#4a4a4a', border: '1px solid #4a4a4a' }}
             onMouseEnter={e => e.currentTarget.style.opacity = '.8'}

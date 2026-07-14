@@ -10,6 +10,8 @@ import Morosos from './pages/Morosos'
 import InformeMensual from './pages/InformeMensual'
 import ReporteFiltro from './pages/ReporteFiltro'
 import MiCuenta from './pages/MiCuenta'
+import Usuarios from './pages/Usuarios'
+import CambiarClave from './pages/CambiarClave'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
 
@@ -63,6 +65,12 @@ export default function App() {
           } />
           <Route path="/informe" element={
             <LayoutRoute><Informe /></LayoutRoute>
+          } />
+          <Route path="/usuarios" element={
+            <LayoutRoute adminOnly><Usuarios /></LayoutRoute>
+          } />
+          <Route path="/cambiar-clave" element={
+            <LayoutRoute><CambiarClave /></LayoutRoute>
           } />
 
           <Route path="*" element={<Navigate to="/" replace />} />

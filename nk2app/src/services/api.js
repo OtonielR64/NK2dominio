@@ -27,6 +27,13 @@ export const api = {
   // Auth
   login:           (body) => post('/auth/login', body),
   me:              ()     => get('/auth/me'),
+  changePassword:  (body) => put('/auth/change-password', body),
+
+  // Usuarios (admin)
+  getUsuarios:     ()     => get('/usuarios'),
+  createUsuario:   (body) => post('/usuarios', body),
+  updateUsuario:   (body) => put('/usuarios', body),
+  deleteUsuario:   (body) => del('/usuarios', body),
 
   // Habitantes
   getHabitantes:   ()     => get('/habitantes'),

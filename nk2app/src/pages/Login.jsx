@@ -25,8 +25,12 @@ export default function Login() {
   async function handleAdmin({ username, password }) {
     setLoadingAdmin(true); setErrorAdmin('')
     try {
-      const rol = await login(username, password)
-      navigate(rol === 'visor' ? '/informe' : next, { replace: true })
+      const data = await login(username, password)
+      if (data.must_change_password) {
+        navigate('/cambiar-clave', { replace: true })
+      } else {
+        navigate(data.rol === 'visor' ? '/informe' : next, { replace: true })
+      }
     } catch (e) {
       setErrorAdmin(e.message || 'Credenciales incorrectas')
     }
